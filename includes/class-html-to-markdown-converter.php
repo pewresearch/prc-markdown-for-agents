@@ -1,4 +1,5 @@
 <?php
+
 /**
  * HTML-to-Markdown converter.
  *

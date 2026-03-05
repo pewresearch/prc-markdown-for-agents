@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Markdown converter for block content.
  *

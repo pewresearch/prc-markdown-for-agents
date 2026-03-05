@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Block Markdown Registry.
  *

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Content negotiation for Accept: text/markdown.
  *

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * YAML frontmatter generation for markdown output.
  *
@@ -191,6 +192,7 @@ class Frontmatter {
 	 * @return string Escaped string.
 	 */
 	protected function escape_yaml( $str ) {
+		$str = str_replace( array( "\r\n", "\r", "\n" ), '\n', $str );
 		return addcslashes( $str, '"\\' );
 	}
 }

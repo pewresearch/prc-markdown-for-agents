@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Rewrite rules for .md and /markdown URL endpoints.
  *

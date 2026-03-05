@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Discovery tags for markdown alternate in wp_head.
  *

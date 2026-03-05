@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Markdown response output handler.
  *
@@ -67,7 +68,8 @@ class Markdown_Response {
 
 		$parts = array();
 		foreach ( $options as $key => $value ) {
-			$parts[] = $key . '=' . ( $value ? 'yes' : 'no' );
+			$safe_key = sanitize_key( $key );
+			$parts[]  = $safe_key . '=' . ( $value ? 'yes' : 'no' );
 		}
 
 		return implode( ', ', $parts );

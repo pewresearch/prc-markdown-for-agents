@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Integration with prc-pdf-extraction plugin.
  *

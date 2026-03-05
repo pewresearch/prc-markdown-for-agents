@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Integration with prc-report-package plugin.
  *
@@ -43,18 +44,18 @@ class Report_Package_Integration {
 	 */
 	public function append_next_page_link( $markdown_body, $post ) {
 		if ( ! function_exists( 'PRC\Platform\Report_Package\is_chapter_part_of_report_package' ) ) {
-			return $markdown_body . 'No report package integration found';
+			return $markdown_body;
 		}
 
 		if ( ! \PRC\Platform\Report_Package\is_chapter_part_of_report_package( $post->ID ) ) {
-			return $markdown_body . 'Post is not a chapter of a report package';
+			return $markdown_body;
 		}
 
 		$pagination = \PRC\Platform\Report_Package\get_pagination( $post->ID );
 		$next_post  = $pagination['next_post'] ?? null;
 
 		if ( empty( $next_post ) || empty( $next_post['title'] ) || empty( $next_post['link'] ) ) {
-			return $markdown_body . 'No next post found';
+			return $markdown_body;
 		}
 
 		$next_url = rtrim( $next_post['link'], '/' ) . '.md';
