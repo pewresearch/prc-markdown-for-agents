@@ -55,8 +55,7 @@ class Content_Negotiation {
 			return;
 		}
 
-		$converter = new Markdown_Converter();
-		if ( ! in_array( $post->post_type, $converter->get_supported_post_types(), true ) ) {
+		if ( ! post_type_supports( $post->post_type, 'prc-markdown-for-agents' ) ) {
 			return;
 		}
 
