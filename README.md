@@ -44,7 +44,7 @@ Post type support is opt-in via `add_post_type_support( $type, 'prc-markdown-for
 | `includes/class-staff-bylines-integration.php` | Populates `authors` frontmatter from `prc-staff-bylines` |
 | `includes/class-datasets-integration.php` | Adds `datasets` to frontmatter from the `datasets` taxonomy |
 | `includes/class-pdf-extraction-integration.php` | Adds PDF extraction URL to frontmatter when available |
-| `includes/class-report-package-integration.php` | Appends next-chapter link to Markdown body for report packages |
+| `includes/class-report-package-integration.php` | Prepends TOC for report roots with materials; appends next-chapter link to Markdown body for report packages |
 | `includes/class-loader.php` | Hook registration helper (action/filter queue) |
 
 ## Hooks & Filters
@@ -57,6 +57,7 @@ Post type support is opt-in via `add_post_type_support( $type, 'prc-markdown-for
 | `prc_markdown_for_agents_authors` | Filter | `( array $authors, WP_Post $post )` — Populate or override the `authors` frontmatter field. Each entry is an array with at least a `name` key; `job_title` and `link` are optional. |
 | `prc_markdown_for_agents_frontmatter` | Filter | `( array $data, WP_Post $post )` — Modify the full frontmatter data array before it is serialized to YAML. Keys with empty values are stripped automatically. |
 | `prc_markdown_for_agents_after_markdown` | Filter | `( string $markdown_body, WP_Post $post )` — Append or transform the Markdown body after conversion but before the response is sent. Used by the report package integration to add next-chapter links. |
+| `prc_markdown_for_agents_toc_for_post` | Filter | `( string $toc_markdown, WP_Post $post )` — Return the table-of-contents Markdown for the given post, or the passed-through value if no TOC. Implementers (e.g. prc-block-library) return TOC when the post is part of a report package; the markdown plugin uses this to prepend TOC after the title for report roots with materials. |
 
 ### Registering a Block Callback
 

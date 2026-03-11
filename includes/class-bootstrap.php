@@ -57,6 +57,7 @@ class Bootstrap {
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-markdown-converter.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-frontmatter.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-markdown-response.php';
+		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-markdown-cache-invalidator.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-content-negotiation.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-rewrite-rules.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-discovery.php';
@@ -77,6 +78,7 @@ class Bootstrap {
 
 		$content_negotiation       = new Content_Negotiation( $this->get_loader() );
 		$rewrite_rules             = new Rewrite_Rules( $this->get_loader() );
+		new Markdown_Cache_Invalidator( $this->get_loader() );
 		$discovery                 = new Discovery( $this->get_loader() );
 		$staff_bylines_integration = new Staff_Bylines_Integration( $this->get_loader() );
 		$datasets_integration      = new Datasets_Integration( $this->get_loader() );

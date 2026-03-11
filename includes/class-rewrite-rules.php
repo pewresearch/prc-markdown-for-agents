@@ -88,9 +88,6 @@ class Rewrite_Rules {
 			return;
 		}
 
-		header( 'X-Robots-Tag: noindex' );
-		header( 'Link: <' . esc_url( get_permalink( $post ) ) . '>; rel="canonical"' );
-
 		Markdown_Response::serve( $post );
 	}
 }

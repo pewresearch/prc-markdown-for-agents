@@ -73,7 +73,7 @@ class Markdown_Converter {
 	 * @param \WP_Post $post     The post being converted.
 	 * @return string
 	 */
-	private function blocks_to_markdown( array $blocks, \WP_Post $post ): string {
+	public function blocks_to_markdown( array $blocks, \WP_Post $post ): string {
 		$parts     = array();
 		$converter = new HTML_To_Markdown_Converter();
 
