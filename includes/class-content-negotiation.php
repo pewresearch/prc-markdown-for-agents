@@ -39,13 +39,15 @@ class Content_Negotiation {
 	/**
 	 * Check Accept header and serve markdown if requested.
 	 *
+	 * For any markdown-eligible URL we also emit `Vary: Accept` on the HTML
+	 * response so edge caches (VIP Batcache, Varnish, etc.) partition the cache
+	 * key by the Accept header. Without this, the first cached HTML response
+	 * would be replayed for subsequent requests that send `Accept: text/markdown`,
+	 * bypassing content negotiation entirely.
+	 *
 	 * @hook template_redirect
 	 */
 	public function maybe_serve_markdown() {
-		if ( ! $this->wants_markdown() ) {
-			return;
-		}
-
 		if ( ! is_singular() ) {
 			return;
 		}
@@ -63,7 +65,27 @@ class Content_Negotiation {
 			return;
 		}
 
+		$this->send_vary_accept_header();
+
+		if ( ! $this->wants_markdown() ) {
+			return;
+		}
+
 		Markdown_Response::serve( $post );
+	}
+
+	/**
+	 * Emit `Vary: Accept` on the current response.
+	 *
+	 * Uses `header( ..., false )` so it appends rather than replacing any
+	 * existing Vary headers (e.g. `Vary: Cookie` from VIP / WP).
+	 */
+	protected function send_vary_accept_header(): void {
+		if ( headers_sent() ) {
+			return;
+		}
+
+		header( 'Vary: Accept', false );
 	}
 
 	/**

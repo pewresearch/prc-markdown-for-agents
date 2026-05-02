@@ -19,7 +19,7 @@
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       prc-markdown-for-agents
- * Requires Plugins:  prc-platform-core
+ * Requires Plugins:  prc-scripts
  */
 
 namespace PRC\Platform\Markdown_For_Agents;

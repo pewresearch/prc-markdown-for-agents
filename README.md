@@ -20,6 +20,9 @@ Bootstrap loads all classes and wires three entry points:
 1. **Content negotiation** — `template_redirect` inspects the `Accept` header and hijacks the response when `text/markdown` is present.
 2. **URL rewriting** — `parse_request` intercepts paths ending in `.md` or `/markdown`, resolves them to posts via `url_to_postid()`, and serves Markdown directly.
 3. **Discovery** — `wp_head` injects `<link rel="alternate" type="text/markdown">` tags pointing to both `.md` and `/markdown` endpoints so agents can find them without guessing.
+4. **Robots.txt** — `robots_txt` filter injects a `Content-Signal:` directive (Cloudflare proposal) under `User-agent: *` so crawlers can discover the site's AI/search consent stance without having to fetch a markdown response first.
+
+`Content_Negotiation::maybe_serve_markdown()` also emits `Vary: Accept` on the **HTML** response for markdown-eligible URLs. This is required for edge caches (VIP Batcache, Varnish, CDNs) to partition the cache key by `Accept`; otherwise the first cached HTML page would be replayed for subsequent agent requests and content negotiation would silently no-op.
 
 When a Markdown response is triggered, `Markdown_Response::serve()` runs: it calls `Markdown_Converter::post_to_markdown()`, prepends YAML frontmatter from `Frontmatter::build()`, sets response headers (`Content-Type: text/markdown`, `Vary: Accept`, `X-Markdown-Tokens`, `Content-Signal`, `X-Robots-Tag: noindex`), and exits.
 
@@ -36,6 +39,7 @@ Post type support is opt-in via `add_post_type_support( $type, 'prc-markdown-for
 | `includes/class-content-negotiation.php` | `Accept: text/markdown` header detection and response |
 | `includes/class-rewrite-rules.php` | `.md` and `/markdown` URL interception via `parse_request` |
 | `includes/class-discovery.php` | Injects `<link rel="alternate">` tags in `wp_head` |
+| `includes/class-robots-txt.php` | Injects `Content-Signal:` directive into `robots.txt` |
 | `includes/class-markdown-converter.php` | Block tree walker; dispatches to callbacks or HTML converter |
 | `includes/class-html-to-markdown-converter.php` | HTML → Markdown via WP HTML API (ported from `wordpress/ai` PR #194) |
 | `includes/class-frontmatter.php` | YAML frontmatter builder (title, description, date, authors, categories, tags) |
@@ -80,9 +84,9 @@ add_action( 'init', function() {
 } );
 ```
 
-### Content-Signal Header
+### Content-Signal
 
-The `Content-Signal` response header is driven by the `prc_markdown_for_agents_content_signal` option (stored via `get_option`). Default value:
+The `Content-Signal` value is driven by the `prc_markdown_for_agents_content_signal` option (stored via `get_option`). Default value:
 
 ```php
 [
@@ -92,7 +96,12 @@ The `Content-Signal` response header is driven by the `prc_markdown_for_agents_c
 ]
 ```
 
-Update this option in `wp-admin` → Options or via WP-CLI to change the signal sent with every Markdown response.
+It is published in two places:
+
+- **HTTP header** on every Markdown response (`Content-Signal: ai-train=yes, search=yes, ai-input=yes`).
+- **`robots.txt` directive** under the `User-agent: *` group, per the [Cloudflare Content Signals proposal](https://developers.cloudflare.com/bots/concepts/content-signals/), so crawlers can read it without first fetching a `.md` URL.
+
+Update this option in `wp-admin` → Options or via WP-CLI to change the signal sent with every Markdown response and in `robots.txt`.
 
 ## Local Development
 

@@ -89,6 +89,25 @@ class Markdown_Converter {
 				continue;
 			}
 
+			$resolved = Block_Markdown_Resolver::resolve_strategy( $block_name, $block, $post );
+			if ( true === $resolved['handled'] ) {
+				if ( true === $resolved['recurse'] ) {
+					$inner = $block['innerBlocks'] ?? array();
+					if ( ! empty( $inner ) ) {
+						$inner_md = $this->blocks_to_markdown( $inner, $post );
+						if ( '' !== trim( $inner_md ) ) {
+							$parts[] = $inner_md;
+						}
+					}
+					continue;
+				}
+
+				if ( '' !== trim( (string) $resolved['markdown'] ) ) {
+					$parts[] = (string) $resolved['markdown'];
+				}
+				continue;
+			}
+
 			// Dispatch to registered block-level markdown callback.
 			$callback = Block_Markdown_Registry::get( $block_name );
 			if ( $callback ) {

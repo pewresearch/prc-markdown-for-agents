@@ -53,6 +53,7 @@ class Bootstrap {
 	private function load_dependencies() {
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-loader.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-block-markdown-registry.php';
+		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-block-markdown-resolver.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-html-to-markdown-converter.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-markdown-converter.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-frontmatter.php';
@@ -61,6 +62,7 @@ class Bootstrap {
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-content-negotiation.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-rewrite-rules.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-discovery.php';
+		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-robots-txt.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-staff-bylines-integration.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-datasets-integration.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-pdf-extraction-integration.php';
@@ -75,15 +77,27 @@ class Bootstrap {
 	private function register_modules() {
 		$this->loader->add_action( 'init', $this, 'register_default_post_type_support', 5 );
 		$this->loader->add_action( 'init', $this, 'fire_block_markdown_registration', 5 );
+		$this->loader->add_filter( 'block_type_metadata', $this, 'inject_block_markdown_metadata', 10, 1 );
 
 		$content_negotiation       = new Content_Negotiation( $this->get_loader() );
 		$rewrite_rules             = new Rewrite_Rules( $this->get_loader() );
 		new Markdown_Cache_Invalidator( $this->get_loader() );
 		$discovery                 = new Discovery( $this->get_loader() );
+		new Robots_Txt( $this->get_loader() );
 		$staff_bylines_integration = new Staff_Bylines_Integration( $this->get_loader() );
 		$datasets_integration      = new Datasets_Integration( $this->get_loader() );
 		$pdf_extraction_integration = new PDF_Extraction_Integration( $this->get_loader() );
 		$report_package_integration = new Report_Package_Integration( $this->get_loader() );
+	}
+
+	/**
+	 * Persist block-level markdown metadata into block supports.
+	 *
+	 * @param array $metadata Raw block metadata.
+	 * @return array
+	 */
+	public function inject_block_markdown_metadata( array $metadata ): array {
+		return Block_Markdown_Resolver::inject_metadata_into_supports( $metadata );
 	}
 
 	/**
