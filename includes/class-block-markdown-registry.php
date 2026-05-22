@@ -38,6 +38,43 @@ class Block_Markdown_Registry {
 	private static array $callbacks = array();
 
 	/**
+	 * Current transformation context slug (e.g. 'email', 'plain-text', 'apple-news').
+	 * Empty string when no transformation is in progress.
+	 *
+	 * Set via do_action( 'prc_markdown_for_agents_set_context', $slug ) by the
+	 * content transformer pipeline before calling post_to_markdown(), and cleared
+	 * via do_action( 'prc_markdown_for_agents_clear_context' ) immediately after.
+	 *
+	 * @var string
+	 */
+	private static string $context = '';
+
+	/**
+	 * Set the current transformation context.
+	 *
+	 * @param string $context Provider slug (e.g. 'email').
+	 */
+	public static function set_context( string $context ): void {
+		self::$context = $context;
+	}
+
+	/**
+	 * Clear the current transformation context.
+	 */
+	public static function clear_context(): void {
+		self::$context = '';
+	}
+
+	/**
+	 * Get the current transformation context slug.
+	 *
+	 * @return string Provider slug, or empty string if none is set.
+	 */
+	public static function get_context(): string {
+		return self::$context;
+	}
+
+	/**
 	 * Register a markdown callback for a block type.
 	 *
 	 * @param string   $block_name Fully-qualified block name (e.g. 'prc-chart-builder/controller').

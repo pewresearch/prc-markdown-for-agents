@@ -79,6 +79,12 @@ class Bootstrap {
 		$this->loader->add_action( 'init', $this, 'fire_block_markdown_registration', 5 );
 		$this->loader->add_filter( 'block_type_metadata', $this, 'inject_block_markdown_metadata', 10, 1 );
 
+		// Allow the content transformer (and others) to signal which provider
+		// is driving the current markdown conversion so block callbacks can
+		// branch their output (e.g. charts → PNG image in email context).
+		add_action( 'prc_markdown_for_agents_set_context', array( Block_Markdown_Registry::class, 'set_context' ) );
+		add_action( 'prc_markdown_for_agents_clear_context', array( Block_Markdown_Registry::class, 'clear_context' ) );
+
 		$content_negotiation       = new Content_Negotiation( $this->get_loader() );
 		$rewrite_rules             = new Rewrite_Rules( $this->get_loader() );
 		new Markdown_Cache_Invalidator( $this->get_loader() );
