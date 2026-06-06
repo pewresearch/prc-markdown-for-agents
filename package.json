@@ -4,5 +4,17 @@
 	"description": "Serve articles as markdown via Accept header and .md URLs for AI agents",
 	"private": true,
 	"author": "Pew Research Center",
-	"license": "GPL-2.0-or-later"
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+		"build": "wp-scripts build --config webpack.config.js",
+		"start:settings": "wp-scripts start --config webpack.config.js",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^31.4.0"
+	},
+	"dependencies": {
+		"@prc/components": "*",
+		"@wordpress/icons": "^10.21.0"
+	}
 }

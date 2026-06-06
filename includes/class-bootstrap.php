@@ -67,6 +67,9 @@ class Bootstrap {
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-datasets-integration.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-pdf-extraction-integration.php';
 		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-report-package-integration.php';
+		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-llms-txt.php';
+		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-llms-txt-cache-invalidator.php';
+		require_once PRC_MARKDOWN_FOR_AGENTS_DIR . '/includes/class-settings.php';
 
 		$this->loader = new Loader();
 	}
@@ -94,6 +97,9 @@ class Bootstrap {
 		$datasets_integration      = new Datasets_Integration( $this->get_loader() );
 		$pdf_extraction_integration = new PDF_Extraction_Integration( $this->get_loader() );
 		$report_package_integration = new Report_Package_Integration( $this->get_loader() );
+		new LLMs_Txt( $this->get_loader() );
+		new Llms_Txt_Cache_Invalidator( $this->get_loader() );
+		new Settings( $this->get_loader() );
 	}
 
 	/**
