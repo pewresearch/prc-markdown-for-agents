@@ -3,17 +3,16 @@ import { __ } from '@wordpress/i18n';
 import {
 	Button,
 	__experimentalVStack as VStack,
-	__experimentalHStack as HStack,
 	__experimentalText as Text,
 } from '@wordpress/components';
 import { arrowUp, arrowDown, trash } from '@wordpress/icons';
 import { WPEntitySearch } from '@prc/components';
 
-import type { ResolvedFeaturedReport } from '../types';
+import type { ResolvedFeaturedPost } from '../types';
 
 interface OrderedPostPickerProps {
 	ids: number[];
-	resolved: ResolvedFeaturedReport[];
+	resolved: ResolvedFeaturedPost[];
 	onChange: (ids: number[]) => void;
 }
 
@@ -23,7 +22,7 @@ export default function OrderedPostPicker({
 	onChange,
 }: OrderedPostPickerProps) {
 	const resolvedById = useMemo(() => {
-		const map = new Map<number, ResolvedFeaturedReport>();
+		const map = new Map<number, ResolvedFeaturedPost>();
 		resolved.forEach((item) => {
 			map.set(item.id, item);
 		});
@@ -56,7 +55,7 @@ export default function OrderedPostPicker({
 	return (
 		<VStack spacing={4} className="markdown-for-agents-settings__picker">
 			<WPEntitySearch
-				placeholder={__('Search reports…', 'prc-markdown-for-agents')}
+				placeholder={__('Search posts…', 'prc-markdown-for-agents')}
 				entityType="postType"
 				entitySubType="post"
 				entityStatus={['publish']}
@@ -67,25 +66,27 @@ export default function OrderedPostPicker({
 			{ids.length === 0 ? (
 				<Text>
 					{__(
-						'No featured reports selected — recent reports will be shown by default.',
+						'No featured posts selected — recent posts will be shown by default.',
 						'prc-markdown-for-agents'
 					)}
 				</Text>
 			) : (
 				<ol className="markdown-for-agents-settings__picker-list">
 					{ids.map((id, index) => {
-						const report = resolvedById.get(id);
+						const post = resolvedById.get(id);
 						const title =
-							report?.title ||
-							__('Untitled report', 'prc-markdown-for-agents');
+							post?.title ||
+							__('Untitled post', 'prc-markdown-for-agents');
 						return (
 							<li
 								key={id}
 								className="markdown-for-agents-settings__picker-item"
 							>
-								<HStack justify="space-between">
-									<Text>{title}</Text>
-									<HStack spacing={2}>
+								<div className="markdown-for-agents-settings__picker-item-row">
+									<Text className="markdown-for-agents-settings__picker-item-title">
+										{title}
+									</Text>
+									<div className="markdown-for-agents-settings__picker-item-actions">
 										<Button
 											icon={arrowUp}
 											label={sprintfMoveUp(title)}
@@ -107,8 +108,8 @@ export default function OrderedPostPicker({
 											size="small"
 											isDestructive
 										/>
-									</HStack>
-								</HStack>
+									</div>
+								</div>
 							</li>
 						);
 					})}

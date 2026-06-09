@@ -88,7 +88,7 @@ class Llms_Txt_Cache_Invalidator {
 	}
 
 	/**
-	 * Invalidate when Featured Reports settings or Content-Signal option changes.
+	 * Invalidate when Featured Posts settings or Content-Signal option changes.
 	 *
 	 * @param string $option Option name.
 	 */

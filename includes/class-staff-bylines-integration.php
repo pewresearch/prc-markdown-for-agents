@@ -40,8 +40,9 @@ class Staff_Bylines_Integration {
 	 *
 	 * Returns an array of author entries with `name`, and optionally `job_title`
 	 * and `link` when the Staff Bylines plugin is active and the post has bylines
-	 * assigned. Falls back to the existing value (typically an empty array) so
-	 * the Frontmatter class can apply its own WP-user fallback.
+	 * assigned. All assigned bylines are included (active staff, former staff, and
+	 * guests). Falls back to the existing value (typically an empty array) so the
+	 * Frontmatter class can apply its own WP-user fallback.
 	 *
 	 * @param array    $authors Existing authors array (empty by default).
 	 * @param \WP_Post $post    The post being converted.

@@ -1,6 +1,7 @@
 import { useEffect, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import {
+	ExternalLink,
 	Spinner,
 	Notice,
 	__experimentalVStack as VStack,
@@ -11,9 +12,23 @@ import './style.scss';
 import './store';
 import { fetchSettings } from './api';
 import SettingsAccordion from './components/settings-accordion';
-import FeaturedReportsSection from './components/featured-reports-section';
+import AboutSection from './components/about-section';
+import CategoriesSection from './components/categories-section';
+import FeaturedPostsSection from './components/featured-posts-section';
+import AdditionalResourcesSection from './components/additional-resources-section';
+
+function getLlmsTxtUrl(): string {
+	const settings = (
+		window as Window & {
+			prcMarkdownForAgentsSettings?: { llmsTxtUrl?: string };
+		}
+	).prcMarkdownForAgentsSettings;
+
+	return settings?.llmsTxtUrl ?? '/llms.txt';
+}
 
 export default function SettingsApp() {
+	const llmsTxtUrl = getLlmsTxtUrl();
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -44,9 +59,12 @@ export default function SettingsApp() {
 				</h1>
 				<Text className="markdown-for-agents-settings__header-description">
 					{__(
-						'Curate the reports highlighted in /llms.txt for AI agents and crawlers.',
+						'Curate /llms.txt content for AI agents and crawlers.',
 						'prc-markdown-for-agents'
-					)}
+					)}{' '}
+					<ExternalLink href={llmsTxtUrl}>
+						{__('View /llms.txt', 'prc-markdown-for-agents')}
+					</ExternalLink>
 				</Text>
 			</VStack>
 			{loading ? (
@@ -63,18 +81,69 @@ export default function SettingsApp() {
 							<li className="markdown-for-agents-settings__list-item">
 								<SettingsAccordion
 									title={__(
-										'Featured Reports',
+										'About',
 										'prc-markdown-for-agents'
 									)}
 									description={__(
-										'Choose and order reports to feature in the /llms.txt directory.',
+										'Edit the site summary, About description, and link bullets in /llms.txt.',
 										'prc-markdown-for-agents'
 									)}
-									contentId="markdown-for-agents-settings-featured-reports"
-									headingId="markdown-for-agents-settings-featured-reports-heading"
-									descriptionId="markdown-for-agents-settings-featured-reports-description"
+									contentId="markdown-for-agents-settings-about"
+									headingId="markdown-for-agents-settings-about-heading"
+									descriptionId="markdown-for-agents-settings-about-description"
 								>
-									<FeaturedReportsSection />
+									<AboutSection />
+								</SettingsAccordion>
+							</li>
+							<li className="markdown-for-agents-settings__list-item">
+								<SettingsAccordion
+									title={__(
+										'Categories',
+										'prc-markdown-for-agents'
+									)}
+									description={__(
+										'Choose which top-level categories appear under ## Categories in /llms.txt.',
+										'prc-markdown-for-agents'
+									)}
+									contentId="markdown-for-agents-settings-categories"
+									headingId="markdown-for-agents-settings-categories-heading"
+									descriptionId="markdown-for-agents-settings-categories-description"
+								>
+									<CategoriesSection />
+								</SettingsAccordion>
+							</li>
+							<li className="markdown-for-agents-settings__list-item">
+								<SettingsAccordion
+									title={__(
+										'Featured Posts',
+										'prc-markdown-for-agents'
+									)}
+									description={__(
+										'Choose and order posts to feature in the /llms.txt directory.',
+										'prc-markdown-for-agents'
+									)}
+									contentId="markdown-for-agents-settings-featured-posts"
+									headingId="markdown-for-agents-settings-featured-posts-heading"
+									descriptionId="markdown-for-agents-settings-featured-posts-description"
+								>
+									<FeaturedPostsSection />
+								</SettingsAccordion>
+							</li>
+							<li className="markdown-for-agents-settings__list-item">
+								<SettingsAccordion
+									title={__(
+										'Additional Resources',
+										'prc-markdown-for-agents'
+									)}
+									description={__(
+										'Add custom subsections under Additional Resources in /llms.txt.',
+										'prc-markdown-for-agents'
+									)}
+									contentId="markdown-for-agents-settings-additional-resources"
+									headingId="markdown-for-agents-settings-additional-resources-heading"
+									descriptionId="markdown-for-agents-settings-additional-resources-description"
+								>
+									<AdditionalResourcesSection />
 								</SettingsAccordion>
 							</li>
 						</ul>

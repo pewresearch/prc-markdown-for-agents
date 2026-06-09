@@ -4,32 +4,30 @@ import { __ } from '@wordpress/i18n';
 import { Button, __experimentalVStack as VStack } from '@wordpress/components';
 
 import { store as settingsStore } from '../store';
-import { saveSettings } from '../api';
+import { saveFeaturedPosts } from '../api';
 import OrderedPostPicker from './ordered-post-picker';
 
-export default function FeaturedReportsSection() {
+export default function FeaturedPostsSection() {
 	const { settings, resolved } = useSelect((select) => {
 		const storeSelect = select(settingsStore);
 		return {
 			settings: storeSelect.getSettings(),
-			resolved: storeSelect.getFeaturedReportsResolved(),
+			resolved: storeSelect.getFeaturedPostsResolved(),
 		};
 	}, []);
-	const { setFeaturedReports } = useDispatch(settingsStore);
-	const [draftIds, setDraftIds] = useState<number[]>(
-		settings.featured_reports
-	);
+	const { setFeaturedPosts } = useDispatch(settingsStore);
+	const [draftIds, setDraftIds] = useState<number[]>(settings.featured_posts);
 	const [isSaving, setIsSaving] = useState(false);
 
 	useEffect(() => {
-		setDraftIds(settings.featured_reports);
-	}, [settings.featured_reports]);
+		setDraftIds(settings.featured_posts);
+	}, [settings.featured_posts]);
 
 	const handleSave = async () => {
 		setIsSaving(true);
-		setFeaturedReports(draftIds);
+		setFeaturedPosts(draftIds);
 		try {
-			await saveSettings();
+			await saveFeaturedPosts();
 		} finally {
 			setIsSaving(false);
 		}
@@ -43,7 +41,7 @@ export default function FeaturedReportsSection() {
 				onChange={setDraftIds}
 			/>
 			<Button variant="primary" onClick={handleSave} isBusy={isSaving}>
-				{__('Save featured reports', 'prc-markdown-for-agents')}
+				{__('Save featured posts', 'prc-markdown-for-agents')}
 			</Button>
 		</VStack>
 	);

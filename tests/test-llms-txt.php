@@ -74,12 +74,12 @@ class Test_LLMs_Txt extends WP_UnitTestCase {
 					),
 				);
 				$sections[] = array(
-					'slug'  => 'topics',
-					'title' => 'Topics Marker',
+					'slug'  => 'categories',
+					'title' => 'Categories Marker',
 					'links' => array(
 						array(
-							'title' => 'Topic',
-							'url'   => 'https://example.com/topic',
+							'title' => 'Category',
+							'url'   => 'https://example.com/category',
 						),
 					),
 				);
@@ -88,12 +88,68 @@ class Test_LLMs_Txt extends WP_UnitTestCase {
 			20
 		);
 
-		$body           = LLMs_Txt::get_rendered_body();
-		$topics_pos     = strpos( $body, '## Topics Marker' );
-		$datasets_pos   = strpos( $body, '## Datasets Marker' );
-		$this->assertNotFalse( $topics_pos );
+		$body             = LLMs_Txt::get_rendered_body();
+		$categories_pos   = strpos( $body, '## Categories Marker' );
+		$datasets_pos     = strpos( $body, '## Datasets Marker' );
+		$this->assertNotFalse( $categories_pos );
 		$this->assertNotFalse( $datasets_pos );
-		$this->assertLessThan( $datasets_pos, $topics_pos );
+		$this->assertLessThan( $datasets_pos, $categories_pos );
+	}
+
+	public function test_categories_section_decodes_html_entities_in_titles(): void {
+		$term_id = self::factory()->term->create(
+			array(
+				'taxonomy' => Settings::CATEGORIES_TAXONOMY,
+				'name'     => 'Politics & Policy',
+				'parent'   => 0,
+			)
+		);
+
+		update_option(
+			Settings::OPTION_KEY,
+			array(
+				'category_ids' => array( $term_id ),
+			)
+		);
+
+		wp_cache_delete( LLMs_Txt::CACHE_KEY, LLMs_Txt::CACHE_GROUP );
+
+		$body = LLMs_Txt::get_rendered_body();
+
+		$this->assertStringContainsString( 'Politics & Policy', $body );
+		$this->assertStringNotContainsString( 'Politics &amp; Policy', $body );
+	}
+
+	public function test_categories_section_respects_curated_category_ids(): void {
+		$included = self::factory()->term->create(
+			array(
+				'taxonomy' => Settings::CATEGORIES_TAXONOMY,
+				'name'     => 'Included Category',
+				'parent'   => 0,
+			)
+		);
+		self::factory()->term->create(
+			array(
+				'taxonomy' => Settings::CATEGORIES_TAXONOMY,
+				'name'     => 'Excluded Category',
+				'parent'   => 0,
+			)
+		);
+
+		update_option(
+			Settings::OPTION_KEY,
+			array(
+				'category_ids' => array( $included ),
+			)
+		);
+
+		wp_cache_delete( LLMs_Txt::CACHE_KEY, LLMs_Txt::CACHE_GROUP );
+
+		$body = LLMs_Txt::get_rendered_body();
+
+		$this->assertStringContainsString( '## Categories', $body );
+		$this->assertStringContainsString( 'Included Category', $body );
+		$this->assertStringNotContainsString( 'Excluded Category', $body );
 	}
 
 	public function test_object_cache_hit_skips_filter_fanout(): void {
@@ -164,7 +220,7 @@ class Test_LLMs_Txt extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_featured_reports_respects_settings_order(): void {
+	public function test_featured_posts_respects_settings_order(): void {
 		$first = self::factory()->post->create(
 			array(
 				'post_type'   => 'post',
@@ -183,7 +239,7 @@ class Test_LLMs_Txt extends WP_UnitTestCase {
 		update_option(
 			Settings::OPTION_KEY,
 			array(
-				'featured_reports' => array( $second, $first ),
+				'featured_posts' => array( $second, $first ),
 			)
 		);
 
@@ -195,5 +251,53 @@ class Test_LLMs_Txt extends WP_UnitTestCase {
 		$this->assertNotFalse( $second_pos );
 		$this->assertNotFalse( $first_pos );
 		$this->assertLessThan( $first_pos, $second_pos );
+	}
+
+	public function test_custom_about_text_renders_in_body(): void {
+		update_option(
+			Settings::OPTION_KEY,
+			array(
+				'site_summary'      => 'Distinctive agent-facing summary.',
+				'about_description' => 'Distinctive about paragraph.',
+				'about_links'       => array(
+					array(
+						'id'          => 'first-about-link',
+						'title'       => 'First About Link',
+						'url'         => 'https://example.com/first-about',
+						'description' => 'First about bullet',
+					),
+					array(
+						'id'          => 'second-about-link',
+						'title'       => 'Second About Link',
+						'url'         => 'https://example.com/second-about',
+						'description' => 'Second about bullet',
+					),
+				),
+			)
+		);
+
+		wp_cache_delete( LLMs_Txt::CACHE_KEY, LLMs_Txt::CACHE_GROUP );
+
+		$body = LLMs_Txt::get_rendered_body();
+
+		$this->assertStringContainsString(
+			'> Distinctive agent-facing summary.',
+			$body
+		);
+		$this->assertStringContainsString( 'Distinctive about paragraph.', $body );
+		$this->assertStringContainsString(
+			'- [First About Link](https://example.com/first-about): First about bullet',
+			$body
+		);
+		$this->assertStringContainsString(
+			'- [Second About Link](https://example.com/second-about): Second about bullet',
+			$body
+		);
+
+		$first_pos  = strpos( $body, 'First About Link' );
+		$second_pos = strpos( $body, 'Second About Link' );
+		$this->assertNotFalse( $first_pos );
+		$this->assertNotFalse( $second_pos );
+		$this->assertLessThan( $second_pos, $first_pos );
 	}
 }

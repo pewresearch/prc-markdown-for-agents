@@ -16,8 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Serves /llms.txt in the llmstxt.org shape and aggregates typed section descriptors.
  *
- * RLS is the canonical legacy consumer of `prc_llms_txt_sections`; migration to the
- * typed filter is deferred to prc-religious-landscape-study.
+ * Plugins may append Additional Resources subsections via
+ * `prc_markdown_for_agents_additional_resources_blocks`. Legacy `prc_llms_txt_sections`
+ * remains supported for back-compat.
  *
  * @package PRC\Platform\Markdown_For_Agents
  */
@@ -50,8 +51,8 @@ class LLMs_Txt {
 	 */
 	public const SECTION_ORDER = array(
 		'about',
-		'topics',
-		'featured-reports',
+		'categories',
+		'featured-posts',
 		'datasets',
 		'researchers',
 		'topline-extractions',
@@ -103,7 +104,8 @@ class LLMs_Txt {
 		$this->loader->add_filter( 'query_vars', $this, 'add_query_var' );
 		$this->loader->add_action( 'parse_request', $this, 'maybe_serve', 0 );
 		$this->loader->add_filter( 'prc_markdown_for_agents_llms_txt_sections', $this, 'register_about_section', 5 );
-		$this->loader->add_filter( 'prc_markdown_for_agents_llms_txt_sections', $this, 'register_featured_reports_section', 10 );
+		$this->loader->add_filter( 'prc_markdown_for_agents_llms_txt_sections', $this, 'register_categories_section', 7 );
+		$this->loader->add_filter( 'prc_markdown_for_agents_llms_txt_sections', $this, 'register_featured_posts_section', 10 );
 		$this->loader->add_filter( 'prc_markdown_for_agents_llms_txt_sections', $this, 'append_legacy_sections', 999 );
 	}
 
@@ -270,9 +272,16 @@ class LLMs_Txt {
 	 * @param array<int, array<string, mixed>> $sections Ordered section descriptors.
 	 */
 	public static function render_body( array $sections ): string {
+		$settings     = Settings::get_settings();
+		$site_summary = preg_replace(
+			'/\s+/',
+			' ',
+			trim( (string) ( $settings['site_summary'] ?? Settings::get_default_site_summary() ) )
+		);
+
 		$lines   = array();
 		$lines[] = '# Pew Research Center';
-		$lines[] = '> Nonpartisan fact tank informing the public about the issues, attitudes and trends shaping the world.';
+		$lines[] = '> ' . $site_summary;
 		$lines[] = '';
 
 		$content_signal = Markdown_Response::get_content_signal_header();
@@ -394,27 +403,28 @@ class LLMs_Txt {
 	 * @return array<string, mixed>
 	 */
 	public static function get_about_section(): array {
+		$settings = Settings::get_settings();
+		$links    = array();
+
+		if ( is_array( $settings['about_links'] ?? null ) ) {
+			foreach ( $settings['about_links'] as $link ) {
+				if ( ! is_array( $link ) ) {
+					continue;
+				}
+
+				$links[] = array(
+					'title'       => (string) ( $link['title'] ?? '' ),
+					'url'         => (string) ( $link['url'] ?? '' ),
+					'description' => (string) ( $link['description'] ?? '' ),
+				);
+			}
+		}
+
 		return array(
 			'slug'        => 'about',
 			'title'       => __( 'About', 'prc-markdown-for-agents' ),
-			'description' => __( 'Learn about Pew Research Center, our methodology, and publications.', 'prc-markdown-for-agents' ),
-			'links'       => array(
-				array(
-					'title'       => __( 'About Pew Research Center', 'prc-markdown-for-agents' ),
-					'url'         => 'https://www.pewresearch.org/about/',
-					'description' => __( 'Mission, history, and staff.', 'prc-markdown-for-agents' ),
-				),
-				array(
-					'title'       => __( 'Methodology', 'prc-markdown-for-agents' ),
-					'url'         => 'https://www.pewresearch.org/methods/',
-					'description' => __( 'How we conduct our research.', 'prc-markdown-for-agents' ),
-				),
-				array(
-					'title'       => __( 'Publications', 'prc-markdown-for-agents' ),
-					'url'         => 'https://www.pewresearch.org/publications/',
-					'description' => __( 'Reports, articles, and data-driven analysis.', 'prc-markdown-for-agents' ),
-				),
-			),
+			'description' => (string) ( $settings['about_description'] ?? Settings::get_default_about_description() ),
+			'links'       => $links,
 		);
 	}
 
@@ -430,13 +440,111 @@ class LLMs_Txt {
 	}
 
 	/**
-	 * Register Featured Reports from settings (with recency fallback).
+	 * Register Categories from settings (with automatic fallback).
 	 *
 	 * @param array<int, array<string, mixed>> $sections Existing sections.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function register_featured_reports_section( array $sections ): array {
-		$featured = self::get_featured_reports_section();
+	public function register_categories_section( array $sections ): array {
+		$categories = self::get_categories_section();
+		if ( ! empty( $categories['links'] ) ) {
+			$sections[] = $categories;
+		}
+
+		return $sections;
+	}
+
+	/**
+	 * Build the Categories section descriptor.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function get_categories_section(): array {
+		return array(
+			'slug'        => 'categories',
+			'title'       => __( 'Categories', 'prc-markdown-for-agents' ),
+			'description' => __( 'Browse Pew Research Center analysis by category.', 'prc-markdown-for-agents' ),
+			'links'       => self::get_category_links(),
+		);
+	}
+
+	/**
+	 * Build category link bullets for /llms.txt.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private static function get_category_links(): array {
+		$selected_ids = Settings::get_category_ids_for_llms_txt();
+		$query_args   = array(
+			'taxonomy'               => Settings::CATEGORIES_TAXONOMY,
+			'update_term_meta_cache' => false,
+		);
+
+		if ( is_array( $selected_ids ) ) {
+			$query_args['include']    = $selected_ids;
+			$query_args['orderby']    = 'include';
+			$query_args['hide_empty'] = false;
+			$total                    = count( $selected_ids );
+		} else {
+			$query_args['hide_empty'] = true;
+			$query_args['number']     = self::SECTION_CAP + 1;
+			$query_args['parent']     = 0;
+			$total                    = 0;
+		}
+
+		$terms = get_terms( $query_args );
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			return array();
+		}
+
+		if ( ! is_array( $selected_ids ) ) {
+			$total = count( $terms );
+		}
+
+		$links = array();
+		$slice = array_slice( $terms, 0, self::SECTION_CAP );
+
+		foreach ( $slice as $term ) {
+			if ( ! $term instanceof \WP_Term ) {
+				continue;
+			}
+
+			$url = get_term_link( $term );
+			if ( is_wp_error( $url ) ) {
+				continue;
+			}
+
+			$description = trim( (string) $term->description );
+			if ( '' !== $description ) {
+				$description = wp_html_excerpt( wp_strip_all_tags( $description ), 160, '…' );
+			}
+
+			$link = array(
+				'title' => html_entity_decode( $term->name, ENT_QUOTES | ENT_HTML5, 'UTF-8' ),
+				'url'   => $url,
+			);
+			if ( '' !== $description ) {
+				$link['description'] = $description;
+			}
+			$links[] = $link;
+		}
+
+		$archive_url = get_term_link( (int) get_option( 'default_category' ), Settings::CATEGORIES_TAXONOMY );
+		if ( is_wp_error( $archive_url ) ) {
+			$archive_url = home_url( '/topic/' );
+		}
+
+		return self::maybe_append_see_all_link( $links, $total, (string) $archive_url );
+	}
+
+	/**
+	 * Register Featured Posts from settings (with recency fallback).
+	 *
+	 * @param array<int, array<string, mixed>> $sections Existing sections.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function register_featured_posts_section( array $sections ): array {
+		$featured = self::get_featured_posts_section();
 		if ( ! empty( $featured['links'] ) ) {
 			$sections[] = $featured;
 		}
@@ -444,13 +552,13 @@ class LLMs_Txt {
 	}
 
 	/**
-	 * Build the Featured Reports section descriptor.
+	 * Build the Featured Posts section descriptor.
 	 *
 	 * @return array<string, mixed>
 	 */
-	public static function get_featured_reports_section(): array {
+	public static function get_featured_posts_section(): array {
 		$settings = Settings::get_settings();
-		$ids      = is_array( $settings['featured_reports'] ?? null ) ? $settings['featured_reports'] : array();
+		$ids      = is_array( $settings['featured_posts'] ?? null ) ? $settings['featured_posts'] : array();
 		$ids      = array_values(
 			array_unique(
 				array_filter(
@@ -510,45 +618,78 @@ class LLMs_Txt {
 		}
 
 		return array(
-			'slug'        => 'featured-reports',
-			'title'       => __( 'Featured reports', 'prc-markdown-for-agents' ),
-			'description' => __( 'Curated reports highlighted by Pew Research Center editorial.', 'prc-markdown-for-agents' ),
+			'slug'        => 'featured-posts',
+			'title'       => __( 'Featured posts', 'prc-markdown-for-agents' ),
+			'description' => __( 'Curated posts highlighted by Pew Research Center editorial.', 'prc-markdown-for-agents' ),
 			'links'       => $links,
 		);
 	}
 
 	/**
-	 * Append legacy `prc_llms_txt_sections` output as a synthetic trailing section.
+	 * Append Additional Resources from legacy filter and settings blocks.
 	 *
 	 * @param array<int, array<string, mixed>> $sections Existing sections.
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function append_legacy_sections( array $sections ): array {
-		if ( ! has_filter( 'prc_llms_txt_sections' ) ) {
-			return $sections;
-		}
-
-		$legacy = (string) apply_filters_deprecated(
-			'prc_llms_txt_sections',
-			array( '' ),
-			'2.0.0',
-			'prc_markdown_for_agents_llms_txt_sections',
-			__( 'Append typed section descriptors to prc_markdown_for_agents_llms_txt_sections instead.', 'prc-markdown-for-agents' )
-		);
-
-		$legacy = trim( $legacy );
-		if ( '' === $legacy ) {
+		$description = self::build_additional_resources_description();
+		if ( '' === $description ) {
 			return $sections;
 		}
 
 		$sections[] = array(
 			'slug'        => 'legacy-additional-sections',
 			'title'       => __( 'Additional Resources', 'prc-markdown-for-agents' ),
-			'description' => wp_kses( $legacy, self::LEGACY_KSES_ALLOWED ),
+			'description' => $description,
 			'links'       => array(),
 		);
 
 		return $sections;
+	}
+
+	/**
+	 * Build the Additional Resources section body from legacy filter and settings blocks.
+	 */
+	public static function build_additional_resources_description(): string {
+		$parts = array();
+
+		if ( has_filter( 'prc_llms_txt_sections' ) ) {
+			$legacy = trim(
+				(string) apply_filters_deprecated(
+					'prc_llms_txt_sections',
+					array( '' ),
+					'2.0.0',
+					'prc_markdown_for_agents_llms_txt_sections',
+					__( 'Append typed section descriptors to prc_markdown_for_agents_llms_txt_sections instead.', 'prc-markdown-for-agents' )
+				)
+			);
+
+			if ( '' !== $legacy ) {
+				$parts[] = wp_kses( $legacy, self::LEGACY_KSES_ALLOWED );
+			}
+		}
+
+		$blocks = Settings::get_settings()['additional_resources_blocks'];
+
+		foreach ( $blocks as $block ) {
+			if ( ! is_array( $block ) ) {
+				continue;
+			}
+
+			$title = trim( (string) ( $block['title'] ?? '' ) );
+			$body  = trim( (string) ( $block['body'] ?? '' ) );
+			if ( '' === $title ) {
+				continue;
+			}
+
+			$subsection = '### ' . $title;
+			if ( '' !== $body ) {
+				$subsection .= "\n\n" . $body;
+			}
+			$parts[] = $subsection;
+		}
+
+		return implode( "\n\n", $parts );
 	}
 
 	/**

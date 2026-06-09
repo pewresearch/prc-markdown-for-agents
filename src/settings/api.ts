@@ -17,7 +17,7 @@ export async function fetchSettings(): Promise<ApiResponse> {
 	return response;
 }
 
-export async function saveSettings(): Promise<ApiResponse> {
+async function persistSettings(successMessage: string): Promise<ApiResponse> {
 	const { setFromResponse } = dispatch(settingsStore);
 	const settings = select(settingsStore).getSettings();
 	const response = (await apiFetch({
@@ -26,9 +26,32 @@ export async function saveSettings(): Promise<ApiResponse> {
 		data: settings,
 	})) as ApiResponse;
 	setFromResponse(response);
-	dispatch(noticesStore).createSuccessNotice(
-		__('Featured reports saved.', 'prc-markdown-for-agents'),
-		{ type: 'snackbar' }
-	);
+	dispatch(noticesStore).createSuccessNotice(successMessage, {
+		type: 'snackbar',
+	});
 	return response;
+}
+
+export async function saveFeaturedPosts(): Promise<ApiResponse> {
+	return persistSettings(
+		__('Featured posts saved.', 'prc-markdown-for-agents')
+	);
+}
+
+export async function saveAdditionalResources(): Promise<ApiResponse> {
+	return persistSettings(
+		__('Additional resources saved.', 'prc-markdown-for-agents')
+	);
+}
+
+export async function saveAbout(): Promise<ApiResponse> {
+	return persistSettings(
+		__('About section saved.', 'prc-markdown-for-agents')
+	);
+}
+
+export async function saveCategories(): Promise<ApiResponse> {
+	return persistSettings(
+		__('Categories section saved.', 'prc-markdown-for-agents')
+	);
 }

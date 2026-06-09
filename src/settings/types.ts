@@ -1,10 +1,39 @@
 import type { ReactNode } from 'react';
 
-export interface Settings {
-	featured_reports: number[];
+export interface AdditionalResourcesBlock {
+	id: string;
+	title: string;
+	body: string;
 }
 
-export interface ResolvedFeaturedReport {
+export interface AboutLink {
+	id: string;
+	title: string;
+	url: string;
+	description: string;
+}
+
+export interface AboutSettings {
+	site_summary: string;
+	about_description: string;
+	about_links: AboutLink[];
+}
+
+export interface CategoryAvailable {
+	id: number;
+	name: string;
+	slug: string;
+	count: number;
+	permalink: string;
+}
+
+export interface Settings extends AboutSettings {
+	category_ids: number[];
+	featured_posts: number[];
+	additional_resources_blocks: AdditionalResourcesBlock[];
+}
+
+export interface ResolvedFeaturedPost {
 	id: number;
 	title: string;
 	excerpt: string;
@@ -14,12 +43,14 @@ export interface ResolvedFeaturedReport {
 
 export interface ApiResponse {
 	settings: Settings;
-	featured_reports_resolved: ResolvedFeaturedReport[];
+	featured_posts_resolved: ResolvedFeaturedPost[];
+	categories_available: CategoryAvailable[];
 }
 
 export interface SettingsStoreState {
 	settings: Settings;
-	featuredReportsResolved: ResolvedFeaturedReport[];
+	featuredPostsResolved: ResolvedFeaturedPost[];
+	categoriesAvailable: CategoryAvailable[];
 	isLoaded: boolean;
 }
 
