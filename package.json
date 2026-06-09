@@ -1,6 +1,6 @@
 {
 	"name": "@prc/markdown-for-agents",
-	"version": "1.1.0",
+	"version": "1.0.0",
 	"description": "Serve articles as markdown via Accept header and .md URLs for AI agents",
 	"private": true,
 	"author": "Pew Research Center",
