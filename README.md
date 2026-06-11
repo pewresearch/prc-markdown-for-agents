@@ -10,7 +10,7 @@ The plugin integrates with four other platform plugins (staff bylines, datasets,
 
 ### Dependencies
 
-- **Upstream**: `prc-scripts` (required), `prc-staff-bylines` (optional — richer author data), `prc-datasets` (optional — dataset frontmatter), `prc-pdf-extraction` (optional — extraction URL in frontmatter), `prc-report-package` (optional — next-chapter navigation links)
+- **Upstream**: `prc-platform-core` (required), `prc-staff-bylines` (optional — richer author data), `prc-datasets` (optional — dataset frontmatter), `prc-pdf-extraction` (optional — extraction URL in frontmatter), `prc-report-package` (optional — next-chapter navigation links)
 - **Downstream**: Any plugin or external agent that reads `.md` URLs or sends `Accept: text/markdown`
 
 ## Architecture
