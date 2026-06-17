@@ -28,10 +28,17 @@ class Content_Negotiation {
 	/**
 	 * Constructor.
 	 *
+	 * Registers the template_redirect hook only when
+	 * PRC_MARKDOWN_FOR_AGENTS_ENABLE_ACCEPT_NEGOTIATION is true (see Linear PRC-466).
+	 *
 	 * @param Loader $loader The loader instance.
 	 */
 	public function __construct( Loader $loader ) {
 		$this->loader = $loader;
+
+		if ( ! PRC_MARKDOWN_FOR_AGENTS_ENABLE_ACCEPT_NEGOTIATION ) {
+			return;
+		}
 
 		$this->loader->add_action( 'template_redirect', $this, 'maybe_serve_markdown', 1 );
 	}
@@ -91,10 +98,56 @@ class Content_Negotiation {
 	/**
 	 * Check if the request prefers markdown via Accept header.
 	 *
-	 * @return bool True if Accept includes text/markdown.
+	 * @return bool True when text/markdown has a higher q-value than text/html.
 	 */
 	public function wants_markdown() {
 		$accept = isset( $_SERVER['HTTP_ACCEPT'] ) ? (string) $_SERVER['HTTP_ACCEPT'] : '';
-		return str_contains( $accept, 'text/markdown' );
+		return self::accept_prefers_markdown( $accept );
+	}
+
+	/**
+	 * Whether an Accept header prefers markdown over HTML.
+	 *
+	 * Serves markdown only when an explicit text/markdown token has a strictly
+	 * higher q-value than the best text/html or application/xhtml+xml token.
+	 * Wildcard ranges (such as the catch-all range or "text" subtype wildcards)
+	 * are ignored so agents must request markdown explicitly.
+	 *
+	 * @param string $accept Raw Accept header value.
+	 * @return bool
+	 */
+	public static function accept_prefers_markdown( string $accept ): bool {
+		if ( '' === $accept ) {
+			return false;
+		}
+
+		$markdown_q = 0.0;
+		$html_q     = 0.0;
+
+		foreach ( explode( ',', $accept ) as $range ) {
+			$range = trim( $range );
+			if ( '' === $range ) {
+				continue;
+			}
+
+			$parts = array_map( 'trim', explode( ';', $range ) );
+			$type  = strtolower( $parts[0] );
+			$q     = 1.0;
+
+			for ( $i = 1, $count = count( $parts ); $i < $count; $i++ ) {
+				if ( str_starts_with( strtolower( $parts[ $i ] ), 'q=' ) ) {
+					$q = (float) substr( $parts[ $i ], 2 );
+					$q = max( 0.0, min( 1.0, $q ) );
+				}
+			}
+
+			if ( 'text/markdown' === $type ) {
+				$markdown_q = max( $markdown_q, $q );
+			} elseif ( 'text/html' === $type || 'application/xhtml+xml' === $type ) {
+				$html_q = max( $html_q, $q );
+			}
+		}
+
+		return $markdown_q > 0.0 && $markdown_q > $html_q;
 	}
 }

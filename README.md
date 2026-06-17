@@ -1,28 +1,28 @@
 # PRC Markdown for Agents
 
-Serves WordPress post content as Markdown for AI agents and crawlers via `Accept: text/markdown` header negotiation and `.md` / `/markdown` URL endpoints.
+Serves WordPress post content as Markdown for AI agents and crawlers via `.md` and `/markdown` URL endpoints (and `rel="alternate"` discovery in HTML).
 
 ## Overview
 
-This plugin exposes every supported post type as Markdown through two access patterns: HTTP content negotiation (clients that send `Accept: text/markdown`) and explicit URL suffixes (`/my-article.md` or `/my-article/markdown`). The output includes YAML frontmatter with post metadata, a block-by-block converted body, and response headers that signal token count and content-use permissions. It exists to give AI agents a clean, structured alternative to scraping rendered HTML.
+This plugin exposes every supported post type as Markdown through explicit URL suffixes (`/my-article.md` or `/my-article/markdown`) and `<link rel="alternate" type="text/markdown">` discovery tags in the HTML head. The output includes YAML frontmatter with post metadata, a block-by-block converted body, and response headers that signal token count and content-use permissions. It exists to give AI agents a clean, structured alternative to scraping rendered HTML.
+
+> **Accept header negotiation is temporarily disabled** (default `PRC_MARKDOWN_FOR_AGENTS_ENABLE_ACCEPT_NEGOTIATION = false`) due to VIP edge-cache behavior on canonical URLs — see [Linear PRC-466](https://linear.app/pewresearch/issue/PRC-466). Agents should follow `rel="alternate"` links to `.md` or `/markdown` endpoints.
 
 The plugin integrates with four other platform plugins (staff bylines, datasets, PDF extraction, report packages) to enrich frontmatter and append contextual navigation links. Other plugins can register their own block-level Markdown callbacks through an action-based extension point.
 
 ### Dependencies
 
-- **Upstream**: `prc-platform-core` (required), `prc-staff-bylines` (optional — richer author data), `prc-datasets` (optional — dataset frontmatter), `prc-pdf-extraction` (optional — extraction URL in frontmatter), `prc-report-package` (optional — next-chapter navigation links)
-- **Downstream**: Any plugin or external agent that reads `.md` URLs or sends `Accept: text/markdown`
+- **Upstream**: `prc-scripts` (required), `prc-staff-bylines` (optional — richer author data), `prc-datasets` (optional — dataset frontmatter), `prc-pdf-extraction` (optional — extraction URL in frontmatter), `prc-report-package` (optional — next-chapter navigation links)
+- **Downstream**: Any plugin or external agent that reads `.md` or `/markdown` URLs
 
 ## Architecture
 
-Bootstrap loads all classes and wires three entry points:
+Bootstrap loads all classes and wires these entry points:
 
-1. **Content negotiation** — `template_redirect` inspects the `Accept` header and hijacks the response when `text/markdown` is present.
-2. **URL rewriting** — `parse_request` intercepts paths ending in `.md` or `/markdown`, resolves them to posts via `url_to_postid()`, and serves Markdown directly.
-3. **Discovery** — `wp_head` injects `<link rel="alternate" type="text/markdown">` tags pointing to both `.md` and `/markdown` endpoints so agents can find them without guessing.
-4. **Robots.txt** — `robots_txt` filter injects a `Content-Signal:` directive (Cloudflare proposal) under `User-agent: *` so crawlers can discover the site's AI/search consent stance without having to fetch a markdown response first.
-
-`Content_Negotiation::maybe_serve_markdown()` also emits `Vary: Accept` on the **HTML** response for markdown-eligible URLs. This is required for edge caches (VIP Batcache, Varnish, CDNs) to partition the cache key by `Accept`; otherwise the first cached HTML page would be replayed for subsequent agent requests and content negotiation would silently no-op.
+1. **URL rewriting** — `parse_request` intercepts paths ending in `.md` or `/markdown`, resolves them to posts via `url_to_postid()`, and serves Markdown directly. Optional `?markdown=true` on the canonical URL also serves Markdown.
+2. **Discovery** — `wp_head` injects `<link rel="alternate" type="text/markdown">` tags pointing to both `.md` and `/markdown` endpoints so agents can find them without guessing.
+3. **Robots.txt** — `robots_txt` filter injects a `Content-Signal:` directive (Cloudflare proposal) under `User-agent: *` so crawlers can discover the site's AI/search consent stance without having to fetch a markdown response first.
+4. **Content negotiation (disabled by default)** — when `PRC_MARKDOWN_FOR_AGENTS_ENABLE_ACCEPT_NEGOTIATION` is true, `template_redirect` inspects the `Accept` header and hijacks the response when `text/markdown` is preferred. Disabled on VIP until edge cache partitioning is fixed ([PRC-466](https://linear.app/pewresearch/issue/PRC-466)).
 
 When a Markdown response is triggered, `Markdown_Response::serve()` runs: it calls `Markdown_Converter::post_to_markdown()`, prepends YAML frontmatter from `Frontmatter::build()`, sets response headers (`Content-Type: text/markdown`, `Vary: Accept`, `X-Markdown-Tokens`, `Content-Signal`, `X-Robots-Tag: noindex`), and exits.
 
@@ -32,36 +32,36 @@ Post type support is opt-in via `add_post_type_support( $type, 'prc-markdown-for
 
 ### Key Files
 
-| Path | Purpose |
-|------|---------|
-| `prc-markdown-for-agents.php` | Plugin entry point; defines constants, activation hooks |
-| `includes/class-bootstrap.php` | Loads dependencies, wires all modules |
-| `includes/class-content-negotiation.php` | `Accept: text/markdown` header detection and response |
-| `includes/class-rewrite-rules.php` | `.md` and `/markdown` URL interception via `parse_request` |
-| `includes/class-discovery.php` | Injects `<link rel="alternate">` tags in `wp_head` |
-| `includes/class-robots-txt.php` | Injects `Content-Signal:` directive into `robots.txt` |
-| `includes/class-markdown-converter.php` | Block tree walker; dispatches to callbacks or HTML converter |
-| `includes/class-html-to-markdown-converter.php` | HTML → Markdown via WP HTML API (ported from `wordpress/ai` PR #194) |
-| `includes/class-frontmatter.php` | YAML frontmatter builder (title, description, date, authors, categories, tags) |
-| `includes/class-markdown-response.php` | Sets headers and outputs the final Markdown response |
-| `includes/class-block-markdown-registry.php` | Static registry mapping block names to Markdown callbacks |
-| `includes/class-staff-bylines-integration.php` | Populates `authors` frontmatter from `prc-staff-bylines` |
-| `includes/class-datasets-integration.php` | Adds `datasets` to frontmatter from the `datasets` taxonomy |
-| `includes/class-pdf-extraction-integration.php` | Adds PDF extraction URL to frontmatter when available |
+| Path                                            | Purpose                                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `prc-markdown-for-agents.php`                   | Plugin entry point; defines constants, activation hooks                                                      |
+| `includes/class-bootstrap.php`                  | Loads dependencies, wires all modules                                                                        |
+| `includes/class-content-negotiation.php`        | `Accept: text/markdown` header detection (disabled by default; see PRC-466)                                  |
+| `includes/class-rewrite-rules.php`              | `.md` and `/markdown` URL interception via `parse_request`                                                   |
+| `includes/class-discovery.php`                  | Injects `<link rel="alternate">` tags in `wp_head`                                                           |
+| `includes/class-robots-txt.php`                 | Injects `Content-Signal:` directive into `robots.txt`                                                        |
+| `includes/class-markdown-converter.php`         | Block tree walker; dispatches to callbacks or HTML converter                                                 |
+| `includes/class-html-to-markdown-converter.php` | HTML → Markdown via WP HTML API (ported from `wordpress/ai` PR #194)                                         |
+| `includes/class-frontmatter.php`                | YAML frontmatter builder (title, description, date, authors, categories, tags)                               |
+| `includes/class-markdown-response.php`          | Sets headers and outputs the final Markdown response                                                         |
+| `includes/class-block-markdown-registry.php`    | Static registry mapping block names to Markdown callbacks                                                    |
+| `includes/class-staff-bylines-integration.php`  | Populates `authors` frontmatter from `prc-staff-bylines`                                                     |
+| `includes/class-datasets-integration.php`       | Adds `datasets` to frontmatter from the `datasets` taxonomy                                                  |
+| `includes/class-pdf-extraction-integration.php` | Adds PDF extraction URL to frontmatter when available                                                        |
 | `includes/class-report-package-integration.php` | Prepends TOC for report roots with materials; appends next-chapter link to Markdown body for report packages |
-| `includes/class-loader.php` | Hook registration helper (action/filter queue) |
+| `includes/class-loader.php`                     | Hook registration helper (action/filter queue)                                                               |
 
 ## Hooks & Filters
 
-| Hook | Type | Description |
-|------|------|-------------|
-| `prc_markdown_for_agents_register_block_callbacks` | Action | Fires at `init` priority 5. Use `Block_Markdown_Registry::register( $block_name, $callable )` inside this action to map a block type to a Markdown callback. The callable receives `( array $block, WP_Post $post )` and must return a string. |
-| `prc_markdown_for_agents_pre_markdown` | Filter | `( string\|null $pre, WP_Post $post )` — Return a non-null string to bypass the block conversion pipeline entirely. Useful for post types that store pre-built Markdown (e.g. OCR-extracted content). |
-| `prc_markdown_for_agents_block_{$block_name}` | Filter | `( string $block_md, array $block, WP_Post $post )` — Filters the Markdown produced by a block's registered callback. The dynamic segment is the full block name (e.g. `prc-chart-builder/controller`). |
-| `prc_markdown_for_agents_authors` | Filter | `( array $authors, WP_Post $post )` — Populate or override the `authors` frontmatter field. Each entry is an array with at least a `name` key; `job_title` and `link` are optional. |
-| `prc_markdown_for_agents_frontmatter` | Filter | `( array $data, WP_Post $post )` — Modify the full frontmatter data array before it is serialized to YAML. Keys with empty values are stripped automatically. |
-| `prc_markdown_for_agents_after_markdown` | Filter | `( string $markdown_body, WP_Post $post )` — Append or transform the Markdown body after conversion but before the response is sent. Used by the report package integration to add next-chapter links. |
-| `prc_markdown_for_agents_toc_for_post` | Filter | `( string $toc_markdown, WP_Post $post )` — Return the table-of-contents Markdown for the given post, or the passed-through value if no TOC. Implementers (e.g. prc-block-library) return TOC when the post is part of a report package; the markdown plugin uses this to prepend TOC after the title for report roots with materials. |
+| Hook                                               | Type   | Description                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prc_markdown_for_agents_register_block_callbacks` | Action | Fires at `init` priority 5. Use `Block_Markdown_Registry::register( $block_name, $callable )` inside this action to map a block type to a Markdown callback. The callable receives `( array $block, WP_Post $post )` and must return a string.                                                                                         |
+| `prc_markdown_for_agents_pre_markdown`             | Filter | `( string\|null $pre, WP_Post $post )` — Return a non-null string to bypass the block conversion pipeline entirely. Useful for post types that store pre-built Markdown (e.g. OCR-extracted content).                                                                                                                                  |
+| `prc_markdown_for_agents_block_{$block_name}`      | Filter | `( string $block_md, array $block, WP_Post $post )` — Filters the Markdown produced by a block's registered callback. The dynamic segment is the full block name (e.g. `prc-chart-builder/controller`).                                                                                                                                |
+| `prc_markdown_for_agents_authors`                  | Filter | `( array $authors, WP_Post $post )` — Populate or override the `authors` frontmatter field. Each entry is an array with at least a `name` key; `job_title` and `link` are optional.                                                                                                                                                    |
+| `prc_markdown_for_agents_frontmatter`              | Filter | `( array $data, WP_Post $post )` — Modify the full frontmatter data array before it is serialized to YAML. Keys with empty values are stripped automatically.                                                                                                                                                                          |
+| `prc_markdown_for_agents_after_markdown`           | Filter | `( string $markdown_body, WP_Post $post )` — Append or transform the Markdown body after conversion but before the response is sent. Used by the report package integration to add next-chapter links.                                                                                                                                 |
+| `prc_markdown_for_agents_toc_for_post`             | Filter | `( string $toc_markdown, WP_Post $post )` — Return the table-of-contents Markdown for the given post, or the passed-through value if no TOC. Implementers (e.g. prc-block-library) return TOC when the post is part of a report package; the markdown plugin uses this to prepend TOC after the title for report roots with materials. |
 
 ### Registering a Block Callback
 
@@ -102,6 +102,16 @@ It is published in two places:
 - **`robots.txt` directive** under the `User-agent: *` group, per the [Cloudflare Content Signals proposal](https://developers.cloudflare.com/bots/concepts/content-signals/), so crawlers can read it without first fetching a `.md` URL.
 
 Update this option in `wp-admin` → Options or via WP-CLI to change the signal sent with every Markdown response and in `robots.txt`.
+
+### Re-enabling Accept header negotiation
+
+Accept negotiation is off by default (`PRC_MARKDOWN_FOR_AGENTS_ENABLE_ACCEPT_NEGOTIATION`). To re-enable after [PRC-466](https://linear.app/pewresearch/issue/PRC-466) is resolved:
+
+```php
+define( 'PRC_MARKDOWN_FOR_AGENTS_ENABLE_ACCEPT_NEGOTIATION', true );
+```
+
+Add that to `wp-config.php` or a must-use plugin. Purge VIP edge cache after enabling.
 
 ## Local Development
 

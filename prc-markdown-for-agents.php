@@ -10,7 +10,7 @@
  * @wordpress-plugin
  * Plugin Name:       PRC Markdown for Agents
  * Plugin URI:        https://github.com/pewresearch/prc-platform
- * Description:       Serve articles as markdown via Accept header and .md URLs for AI agents and crawlers.
+ * Description:       Serve articles as markdown via .md and /markdown URLs for AI agents and crawlers.
  * Version:           1.0.0
  * Requires at least: 6.8
  * Requires PHP:      8.2
@@ -35,6 +35,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'PRC_MARKDOWN_FOR_AGENTS_FILE', __FILE__ );
 define( 'PRC_MARKDOWN_FOR_AGENTS_DIR', __DIR__ );
 define( 'PRC_MARKDOWN_FOR_AGENTS_VERSION', '1.0.0' );
+
+/**
+ * Accept: text/markdown content negotiation on canonical URLs.
+ *
+ * TEMPORARILY DISABLED (default false) — see Linear PRC-466.
+ *
+ * Issue observed on VIP alpha (Jun 2026): edge page cache on the canonical
+ * article URL does not reliably partition by Vary: Accept. Once a markdown
+ * response is cached (e.g. from Accept: text/markdown or a crawler), subsequent
+ * requests with Accept: text/html receive the cached markdown body
+ * (content-type: text/markdown, x-cache: HIT). Explicit .md and /markdown
+ * endpoints are unaffected (separate cache keys). Agents should use rel=alternate
+ * discovery links until this is resolved.
+ *
+ * Re-enable after VIP cache partitioning is verified or class-vip-compatibility
+ * ships (X-Batcache: no for negotiated markdown, early Vary: Accept, etc.).
+ */
+if ( ! defined( 'PRC_MARKDOWN_FOR_AGENTS_ENABLE_ACCEPT_NEGOTIATION' ) ) {
+	define( 'PRC_MARKDOWN_FOR_AGENTS_ENABLE_ACCEPT_NEGOTIATION', false );
+}
 
 /**
  * The code that runs during plugin activation.
