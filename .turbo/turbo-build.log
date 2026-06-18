@@ -1,5 +1,5 @@
 
-> @prc/markdown-for-agents@1.0.1 build
+> @prc/markdown-for-agents@1.0.2 build
 > wp-scripts build --config webpack.config.js
 
 assets by chunk 19.8 KiB (name: index)
@@ -14,4 +14,4 @@ runtime modules 3.08 KiB 5 modules
 built modules 34.7 KiB (javascript) 1.76 KiB (css/mini-extract) [1m[33m[built][39m[22m
   [1m./src/settings/index.tsx + 22 modules[39m[22m 34.7 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   css ../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m./src/settings/style.scss[39m[22m 1.76 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 15351 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 17526 ms
