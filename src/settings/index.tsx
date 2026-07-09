@@ -1,12 +1,5 @@
-import { createRoot } from '@wordpress/element';
+import { mountSettingsPage } from '@prc/components';
+
 import SettingsApp from './app';
 
-document.addEventListener('DOMContentLoaded', () => {
-	const container = document.getElementById(
-		'prc-markdown-for-agents-settings-admin'
-	);
-	if (container) {
-		const root = createRoot(container);
-		root.render(<SettingsApp />);
-	}
-});
+mountSettingsPage('prc-markdown-for-agents-settings-admin', SettingsApp);

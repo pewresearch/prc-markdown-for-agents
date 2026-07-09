@@ -1,4 +1,4 @@
-import { createReduxStore, register } from '@wordpress/data';
+import { createSettingsStore } from '@prc/components';
 import type {
 	AboutSettings,
 	AdditionalResourcesBlock,
@@ -9,52 +9,54 @@ import type {
 
 export const STORE_NAME = 'prc/markdown-for-agents-settings';
 
-const DEFAULT_STATE: SettingsStoreState = {
-	settings: {
-		site_summary: '',
-		about_description: '',
-		about_links: [],
-		category_ids: [],
-		featured_posts: [],
-		additional_resources_blocks: [],
+export const store = createSettingsStore<
+	Settings,
+	SettingsStoreState,
+	ApiResponse
+>({
+	name: STORE_NAME,
+	defaultState: {
+		settings: {
+			site_summary: '',
+			about_description: '',
+			about_links: [],
+			category_ids: [],
+			featured_posts: [],
+			additional_resources_blocks: [],
+		},
+		featuredPostsResolved: [],
+		categoriesAvailable: [],
+		isLoaded: false,
 	},
-	featuredPostsResolved: [],
-	categoriesAvailable: [],
-	isLoaded: false,
-};
-
-type Action =
-	| { type: 'SET_FROM_RESPONSE'; payload: ApiResponse }
-	| { type: 'SET_FEATURED_POSTS'; payload: number[] }
-	| { type: 'SET_CATEGORY_IDS'; payload: number[] }
-	| {
-			type: 'SET_ADDITIONAL_RESOURCES_BLOCKS';
-			payload: AdditionalResourcesBlock[];
-	  }
-	| { type: 'SET_ABOUT_SETTINGS'; payload: AboutSettings };
-
-const store = createReduxStore(STORE_NAME, {
-	reducer(
-		state: SettingsStoreState = DEFAULT_STATE,
-		action: Action
-	): SettingsStoreState {
+	mapResponseToState: (_state, response) => ({
+		featuredPostsResolved: response.featured_posts_resolved,
+		categoriesAvailable: response.categories_available ?? [],
+	}),
+	extraActions: {
+		setFeaturedPosts(ids: number[]) {
+			return { type: 'SET_FEATURED_POSTS', payload: ids };
+		},
+		setCategoryIds(ids: number[]) {
+			return { type: 'SET_CATEGORY_IDS', payload: ids };
+		},
+		setAdditionalResourcesBlocks(blocks: AdditionalResourcesBlock[]) {
+			return {
+				type: 'SET_ADDITIONAL_RESOURCES_BLOCKS',
+				payload: blocks,
+			};
+		},
+		setAboutSettings(about: AboutSettings) {
+			return { type: 'SET_ABOUT_SETTINGS', payload: about };
+		},
+	},
+	extraReducer: (state, action) => {
 		switch (action.type) {
-			case 'SET_FROM_RESPONSE':
-				return {
-					...state,
-					settings: action.payload.settings,
-					featuredPostsResolved:
-						action.payload.featured_posts_resolved,
-					categoriesAvailable:
-						action.payload.categories_available ?? [],
-					isLoaded: true,
-				};
 			case 'SET_FEATURED_POSTS':
 				return {
 					...state,
 					settings: {
 						...state.settings,
-						featured_posts: action.payload,
+						featured_posts: action.payload as number[],
 					},
 				};
 			case 'SET_CATEGORY_IDS':
@@ -62,7 +64,7 @@ const store = createReduxStore(STORE_NAME, {
 					...state,
 					settings: {
 						...state.settings,
-						category_ids: action.payload,
+						category_ids: action.payload as number[],
 					},
 				};
 			case 'SET_ADDITIONAL_RESOURCES_BLOCKS':
@@ -70,60 +72,32 @@ const store = createReduxStore(STORE_NAME, {
 					...state,
 					settings: {
 						...state.settings,
-						additional_resources_blocks: action.payload,
+						additional_resources_blocks:
+							action.payload as AdditionalResourcesBlock[],
 					},
 				};
-			case 'SET_ABOUT_SETTINGS':
+			case 'SET_ABOUT_SETTINGS': {
+				const about = action.payload as AboutSettings;
 				return {
 					...state,
 					settings: {
 						...state.settings,
-						site_summary: action.payload.site_summary,
-						about_description: action.payload.about_description,
-						about_links: action.payload.about_links,
+						site_summary: about.site_summary,
+						about_description: about.about_description,
+						about_links: about.about_links,
 					},
 				};
+			}
 			default:
-				return state;
+				return null;
 		}
 	},
-
-	actions: {
-		setFromResponse(response: ApiResponse) {
-			return { type: 'SET_FROM_RESPONSE' as const, payload: response };
-		},
-		setFeaturedPosts(ids: number[]) {
-			return { type: 'SET_FEATURED_POSTS' as const, payload: ids };
-		},
-		setCategoryIds(ids: number[]) {
-			return { type: 'SET_CATEGORY_IDS' as const, payload: ids };
-		},
-		setAdditionalResourcesBlocks(blocks: AdditionalResourcesBlock[]) {
-			return {
-				type: 'SET_ADDITIONAL_RESOURCES_BLOCKS' as const,
-				payload: blocks,
-			};
-		},
-		setAboutSettings(about: AboutSettings) {
-			return { type: 'SET_ABOUT_SETTINGS' as const, payload: about };
-		},
-	},
-
-	selectors: {
-		getSettings(state: SettingsStoreState): Settings {
-			return state.settings;
-		},
+	extraSelectors: {
 		getFeaturedPostsResolved(state: SettingsStoreState) {
 			return state.featuredPostsResolved;
 		},
 		getCategoriesAvailable(state: SettingsStoreState) {
 			return state.categoriesAvailable;
 		},
-		isLoaded(state: SettingsStoreState): boolean {
-			return state.isLoaded;
-		},
 	},
 });
-
-register(store);
-export { store };

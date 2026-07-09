@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 export interface AdditionalResourcesBlock {
 	id: string;
 	title: string;
@@ -52,13 +50,4 @@ export interface SettingsStoreState {
 	featuredPostsResolved: ResolvedFeaturedPost[];
 	categoriesAvailable: CategoryAvailable[];
 	isLoaded: boolean;
-}
-
-export interface SettingsAccordionProps {
-	title: string;
-	description: string;
-	children: ReactNode;
-	contentId?: string;
-	headingId?: string;
-	descriptionId?: string;
 }

@@ -1,25 +1,23 @@
+import { createSettingsClient } from '@prc/components';
 import apiFetch from '@wordpress/api-fetch';
 import { dispatch, select } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
 import { __ } from '@wordpress/i18n';
-import { store as settingsStore } from './store';
+
+import { store } from './store';
 import type { ApiResponse } from './types';
 
 const REST_PATH = '/prc-markdown-for-agents/v1/settings';
 
-/**
- * Cookie-authenticated REST requests require the wpApiSettings nonce middleware.
- */
-export async function fetchSettings(): Promise<ApiResponse> {
-	const { setFromResponse } = dispatch(settingsStore);
-	const response = (await apiFetch({ path: REST_PATH })) as ApiResponse;
-	setFromResponse(response);
-	return response;
-}
+export const { fetchSettings } = createSettingsClient({
+	restPath: REST_PATH,
+	store,
+	successMessage: '',
+});
 
 async function persistSettings(successMessage: string): Promise<ApiResponse> {
-	const { setFromResponse } = dispatch(settingsStore);
-	const settings = select(settingsStore).getSettings();
+	const { setFromResponse } = dispatch(store);
+	const settings = select(store).getSettings();
 	const response = (await apiFetch({
 		path: REST_PATH,
 		method: 'POST',
