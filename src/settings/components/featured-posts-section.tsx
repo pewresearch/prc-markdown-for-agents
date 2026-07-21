@@ -1,33 +1,34 @@
-import { useEffect, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
-import { Button, __experimentalVStack as VStack } from '@wordpress/components';
+import { __experimentalVStack as VStack } from '@wordpress/components';
+import { SettingsSectionFooter, useSettingsDraft } from '@prc/components';
 
 import { store as settingsStore } from '../store';
-import { saveFeaturedPosts } from '../api';
+import { saveSettings } from '../api';
 import OrderedPostPicker from './ordered-post-picker';
 
+const TEXT_DOMAIN = 'prc-markdown-for-agents';
+
 export default function FeaturedPostsSection() {
-	const { settings, resolved } = useSelect((select) => {
-		const storeSelect = select(settingsStore);
+	const { featuredPosts, resolved } = useSelect((sel) => {
+		const storeSelect = sel(settingsStore);
 		return {
-			settings: storeSelect.getSettings(),
+			featuredPosts: storeSelect.getSettings().featured_posts,
 			resolved: storeSelect.getFeaturedPostsResolved(),
 		};
 	}, []);
 	const { setFeaturedPosts } = useDispatch(settingsStore);
-	const [draftIds, setDraftIds] = useState<number[]>(settings.featured_posts);
+	const [draftIds, setDraftIds] = useSettingsDraft(featuredPosts);
 	const [isSaving, setIsSaving] = useState(false);
-
-	useEffect(() => {
-		setDraftIds(settings.featured_posts);
-	}, [settings.featured_posts]);
 
 	const handleSave = async () => {
 		setIsSaving(true);
 		setFeaturedPosts(draftIds);
 		try {
-			await saveFeaturedPosts();
+			await saveSettings({
+				successMessage: __('Featured posts saved.', TEXT_DOMAIN),
+			});
 		} finally {
 			setIsSaving(false);
 		}
@@ -40,9 +41,11 @@ export default function FeaturedPostsSection() {
 				resolved={resolved}
 				onChange={setDraftIds}
 			/>
-			<Button variant="primary" onClick={handleSave} isBusy={isSaving}>
-				{__('Save featured posts', 'prc-markdown-for-agents')}
-			</Button>
+			<SettingsSectionFooter
+				onSave={handleSave}
+				isBusy={isSaving}
+				saveLabel={__('Save featured posts', TEXT_DOMAIN)}
+			/>
 		</VStack>
 	);
 }

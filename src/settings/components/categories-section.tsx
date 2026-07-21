@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from '@wordpress/element';
+import { useMemo, useState } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import {
@@ -7,10 +7,13 @@ import {
 	__experimentalVStack as VStack,
 	__experimentalText as Text,
 } from '@wordpress/components';
+import { SettingsSectionFooter, useSettingsDraft } from '@prc/components';
 
 import { store as settingsStore } from '../store';
-import { saveCategories } from '../api';
+import { saveSettings } from '../api';
 import type { CategoryAvailable } from '../types';
+
+const TEXT_DOMAIN = 'prc-markdown-for-agents';
 
 function getAutomaticCategoryIds(categories: CategoryAvailable[]): number[] {
 	return categories
@@ -30,16 +33,15 @@ function getCheckedCategoryIds(
 }
 
 export default function CategoriesSection() {
-	const { categoryIds, categoriesAvailable } = useSelect((select) => {
-		const settings = select(settingsStore).getSettings();
-		const response = select(settingsStore).getCategoriesAvailable();
+	const { categoryIds, categoriesAvailable } = useSelect((sel) => {
+		const settings = sel(settingsStore).getSettings();
 		return {
 			categoryIds: settings.category_ids,
-			categoriesAvailable: response,
+			categoriesAvailable: sel(settingsStore).getCategoriesAvailable(),
 		};
 	}, []);
 	const { setCategoryIds } = useDispatch(settingsStore);
-	const [draftIds, setDraftIds] = useState<number[]>(categoryIds);
+	const [draftIds, setDraftIds] = useSettingsDraft(categoryIds);
 	const [isSaving, setIsSaving] = useState(false);
 
 	const isAutomatic = draftIds.length === 0;
@@ -48,10 +50,6 @@ export default function CategoriesSection() {
 		[draftIds, categoriesAvailable]
 	);
 	const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
-
-	useEffect(() => {
-		setDraftIds(categoryIds);
-	}, [categoryIds]);
 
 	const handleToggle = (categoryId: number, isChecked: boolean) => {
 		const baseIds = isAutomatic
@@ -80,7 +78,9 @@ export default function CategoriesSection() {
 		setIsSaving(true);
 		setCategoryIds(draftIds);
 		try {
-			await saveCategories();
+			await saveSettings({
+				successMessage: __('Categories section saved.', TEXT_DOMAIN),
+			});
 		} finally {
 			setIsSaving(false);
 		}
@@ -94,31 +94,26 @@ export default function CategoriesSection() {
 			<Text>
 				{__(
 					'Choose which top-level categories appear under ## Categories in /llms.txt. Leave automatic to include every category with published posts.',
-					'prc-markdown-for-agents'
+					TEXT_DOMAIN
 				)}
 			</Text>
 			{isAutomatic ? (
 				<Text className="markdown-for-agents-settings__categories-mode">
 					{__(
 						'Automatic: categories with published posts are included.',
-						'prc-markdown-for-agents'
+						TEXT_DOMAIN
 					)}
 				</Text>
 			) : (
 				<Text className="markdown-for-agents-settings__categories-mode">
 					{__(
 						'Custom selection: only checked categories are included.',
-						'prc-markdown-for-agents'
+						TEXT_DOMAIN
 					)}
 				</Text>
 			)}
 			{categoriesAvailable.length === 0 ? (
-				<Text>
-					{__(
-						'No top-level categories found.',
-						'prc-markdown-for-agents'
-					)}
-				</Text>
+				<Text>{__('No top-level categories found.', TEXT_DOMAIN)}</Text>
 			) : (
 				<VStack
 					spacing={2}
@@ -142,16 +137,14 @@ export default function CategoriesSection() {
 					onClick={handleResetToAutomatic}
 					disabled={isAutomatic}
 				>
-					{__('Reset to automatic', 'prc-markdown-for-agents')}
-				</Button>
-				<Button
-					variant="primary"
-					onClick={handleSave}
-					isBusy={isSaving}
-				>
-					{__('Save Categories section', 'prc-markdown-for-agents')}
+					{__('Reset to automatic', TEXT_DOMAIN)}
 				</Button>
 			</div>
+			<SettingsSectionFooter
+				onSave={handleSave}
+				isBusy={isSaving}
+				saveLabel={__('Save Categories section', TEXT_DOMAIN)}
+			/>
 		</VStack>
 	);
 }

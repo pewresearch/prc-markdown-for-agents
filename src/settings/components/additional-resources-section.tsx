@@ -1,4 +1,4 @@
-import { useEffect, useState } from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import {
@@ -9,10 +9,13 @@ import {
 	__experimentalText as Text,
 } from '@wordpress/components';
 import { arrowDown, arrowUp, trash } from '@wordpress/icons';
+import { SettingsSectionFooter, useSettingsDraft } from '@prc/components';
 
 import { store as settingsStore } from '../store';
-import { saveAdditionalResources } from '../api';
+import { saveSettings } from '../api';
 import type { AdditionalResourcesBlock } from '../types';
+
+const TEXT_DOMAIN = 'prc-markdown-for-agents';
 
 function createBlock(): AdditionalResourcesBlock {
 	return {
@@ -23,27 +26,20 @@ function createBlock(): AdditionalResourcesBlock {
 }
 
 export default function AdditionalResourcesSection() {
-	const { blocks } = useSelect((select) => {
-		const storeSelect = select(settingsStore);
-		return {
-			blocks: storeSelect.getSettings().additional_resources_blocks,
-		};
-	}, []);
+	const blocks = useSelect(
+		(sel) => sel(settingsStore).getSettings().additional_resources_blocks,
+		[]
+	);
 	const { setAdditionalResourcesBlocks } = useDispatch(settingsStore);
-	const [draftBlocks, setDraftBlocks] =
-		useState<AdditionalResourcesBlock[]>(blocks);
+	const [draftBlocks, setDraftBlocks] = useSettingsDraft(blocks);
 	const [isSaving, setIsSaving] = useState(false);
-
-	useEffect(() => {
-		setDraftBlocks(blocks);
-	}, [blocks]);
 
 	const updateBlock = (
 		index: number,
 		updates: Partial<AdditionalResourcesBlock>
 	) => {
-		setDraftBlocks((current) =>
-			current.map((block, blockIndex) =>
+		setDraftBlocks(
+			draftBlocks.map((block, blockIndex) =>
 				blockIndex === index ? { ...block, ...updates } : block
 			)
 		);
@@ -54,17 +50,15 @@ export default function AdditionalResourcesSection() {
 		if (nextIndex < 0 || nextIndex >= draftBlocks.length) {
 			return;
 		}
-		setDraftBlocks((current) => {
-			const next = [...current];
-			const [item] = next.splice(index, 1);
-			next.splice(nextIndex, 0, item);
-			return next;
-		});
+		const next = [...draftBlocks];
+		const [item] = next.splice(index, 1);
+		next.splice(nextIndex, 0, item);
+		setDraftBlocks(next);
 	};
 
 	const removeBlock = (index: number) => {
-		setDraftBlocks((current) =>
-			current.filter((_, blockIndex) => blockIndex !== index)
+		setDraftBlocks(
+			draftBlocks.filter((_, blockIndex) => blockIndex !== index)
 		);
 	};
 
@@ -75,7 +69,9 @@ export default function AdditionalResourcesSection() {
 		);
 		setAdditionalResourcesBlocks(blocksToSave);
 		try {
-			await saveAdditionalResources();
+			await saveSettings({
+				successMessage: __('Additional resources saved.', TEXT_DOMAIN),
+			});
 		} finally {
 			setIsSaving(false);
 		}
@@ -86,15 +82,12 @@ export default function AdditionalResourcesSection() {
 			<Text>
 				{__(
 					'Each block becomes a subsection under Additional Resources in /llms.txt.',
-					'prc-markdown-for-agents'
+					TEXT_DOMAIN
 				)}
 			</Text>
 			{draftBlocks.length === 0 ? (
 				<Text>
-					{__(
-						'No additional resource blocks yet.',
-						'prc-markdown-for-agents'
-					)}
+					{__('No additional resource blocks yet.', TEXT_DOMAIN)}
 				</Text>
 			) : (
 				<VStack spacing={4}>
@@ -105,10 +98,7 @@ export default function AdditionalResourcesSection() {
 						>
 							<div className="markdown-for-agents-settings__resources-block-header">
 								<TextControl
-									label={__(
-										'Subsection title',
-										'prc-markdown-for-agents'
-									)}
+									label={__('Subsection title', TEXT_DOMAIN)}
 									value={block.title}
 									onChange={(title) =>
 										updateBlock(index, { title })
@@ -141,10 +131,7 @@ export default function AdditionalResourcesSection() {
 								</div>
 							</div>
 							<TextareaControl
-								label={__(
-									'Subsection content',
-									'prc-markdown-for-agents'
-								)}
+								label={__('Subsection content', TEXT_DOMAIN)}
 								value={block.body}
 								onChange={(body) =>
 									updateBlock(index, { body })
@@ -152,7 +139,7 @@ export default function AdditionalResourcesSection() {
 								rows={8}
 								help={__(
 									'Plain text or markdown. Rendered under ### in /llms.txt.',
-									'prc-markdown-for-agents'
+									TEXT_DOMAIN
 								)}
 							/>
 						</div>
@@ -163,29 +150,28 @@ export default function AdditionalResourcesSection() {
 				variant="secondary"
 				onClick={() => setDraftBlocks([...draftBlocks, createBlock()])}
 			>
-				{__('Add block', 'prc-markdown-for-agents')}
+				{__('Add block', TEXT_DOMAIN)}
 			</Button>
-			<Button variant="primary" onClick={handleSave} isBusy={isSaving}>
-				{__('Save additional resources', 'prc-markdown-for-agents')}
-			</Button>
+			<SettingsSectionFooter
+				onSave={handleSave}
+				isBusy={isSaving}
+				saveLabel={__('Save additional resources', TEXT_DOMAIN)}
+			/>
 		</VStack>
 	);
 }
 
 function sprintfMoveUp(title: string): string {
-	const label =
-		title.trim() || __('Untitled subsection', 'prc-markdown-for-agents');
-	return `${__('Move up', 'prc-markdown-for-agents')}: ${label}`;
+	const label = title.trim() || __('Untitled subsection', TEXT_DOMAIN);
+	return `${__('Move up', TEXT_DOMAIN)}: ${label}`;
 }
 
 function sprintfMoveDown(title: string): string {
-	const label =
-		title.trim() || __('Untitled subsection', 'prc-markdown-for-agents');
-	return `${__('Move down', 'prc-markdown-for-agents')}: ${label}`;
+	const label = title.trim() || __('Untitled subsection', TEXT_DOMAIN);
+	return `${__('Move down', TEXT_DOMAIN)}: ${label}`;
 }
 
 function sprintfRemove(title: string): string {
-	const label =
-		title.trim() || __('Untitled subsection', 'prc-markdown-for-agents');
-	return `${__('Remove', 'prc-markdown-for-agents')}: ${label}`;
+	const label = title.trim() || __('Untitled subsection', TEXT_DOMAIN);
+	return `${__('Remove', TEXT_DOMAIN)}: ${label}`;
 }

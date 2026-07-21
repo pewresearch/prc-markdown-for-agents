@@ -1,17 +1,17 @@
 
-> @prc/markdown-for-agents@1.0.1 build
+> @prc/markdown-for-agents@1.0.3 build
 > wp-scripts build --config webpack.config.js
 
-assets by status 16.3 KiB [compared for emit]
-  asset index.js 16 KiB [compared for emit] [minimized] (name: index)
-  asset index.asset.php 221 bytes [compared for emit] (name: index)
+assets by status 14.4 KiB [compared for emit]
+  asset index.js 14.2 KiB [compared for emit] [minimized] (name: index)
+  asset index.asset.php 191 bytes [compared for emit] (name: index)
 assets by status 2.19 KiB [emitted]
   asset ./style-index-rtl.css 1.09 KiB [emitted] (name: ./style-index) (id hint: style)
   asset ./style-index.css 1.09 KiB [emitted] (name: ./style-index) (id hint: style)
-Entrypoint index 18.5 KiB = ./style-index.css 1.09 KiB ./style-index-rtl.css 1.09 KiB index.js 16 KiB index.asset.php 221 bytes
-orphan modules 241 KiB (javascript) 937 bytes (runtime) [orphan] 339 modules
-runtime modules 3.08 KiB 5 modules
-built modules 28.9 KiB (javascript) 1.09 KiB (css/mini-extract) [built]
-  ./src/settings/index.tsx + 20 modules 28.9 KiB [not cacheable] [built] [code generated]
+Entrypoint index 16.5 KiB = ./style-index.css 1.09 KiB ./style-index-rtl.css 1.09 KiB index.js 14.2 KiB index.asset.php 191 bytes
+orphan modules 239 KiB (javascript) 937 bytes (runtime) [orphan] 337 modules
+runtime modules 2.52 KiB 3 modules
+built modules 26.8 KiB (javascript) 1.09 KiB (css/mini-extract) [built]
+  ./src/settings/index.tsx + 18 modules 26.8 KiB [not cacheable] [built] [code generated]
   css ../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]!./src/settings/style.scss 1.09 KiB [built] [code generated]
-webpack 5.106.2 compiled successfully in 3468 ms
+webpack 5.106.2 compiled successfully in 4638 ms

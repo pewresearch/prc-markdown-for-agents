@@ -1,11 +1,12 @@
 import { __ } from '@wordpress/i18n';
 import { ExternalLink } from '@wordpress/components';
-import { SettingsPage } from '@prc/components';
+import { SettingsPage, type SettingsFieldConfig } from '@prc/components';
 
 import './style.scss';
 import './store';
-import { fetchSettings } from './api';
-import AboutSection from './components/about-section';
+import { fetchSettings, saveSettings } from './api';
+import { store as settingsStore } from './store';
+import AboutLinksSection from './components/about-links-section';
 import CategoriesSection from './components/categories-section';
 import FeaturedPostsSection from './components/featured-posts-section';
 import AdditionalResourcesSection from './components/additional-resources-section';
@@ -21,6 +22,29 @@ function getLlmsTxtUrl(): string {
 
 	return settings?.llmsTxtUrl ?? '/llms.txt';
 }
+
+const ABOUT_FIELDS: SettingsFieldConfig[] = [
+	{
+		id: 'site_summary',
+		type: 'textarea',
+		label: __('Site summary', TEXT_DOMAIN),
+		description: __(
+			'Rendered as the blockquote under the site title in /llms.txt.',
+			TEXT_DOMAIN
+		),
+		rows: 3,
+	},
+	{
+		id: 'about_description',
+		type: 'textarea',
+		label: __('About description', TEXT_DOMAIN),
+		description: __(
+			'Introductory paragraph under ## About in /llms.txt.',
+			TEXT_DOMAIN
+		),
+		rows: 3,
+	},
+];
 
 export default function SettingsApp() {
 	const llmsTxtUrl = getLlmsTxtUrl();
@@ -41,15 +65,26 @@ export default function SettingsApp() {
 			}
 			textDomain={TEXT_DOMAIN}
 			idPrefix="prc-markdown-for-agents-settings"
+			store={settingsStore}
+			saveSettings={saveSettings}
 			sections={[
 				{
 					slug: 'about',
 					title: __('About', TEXT_DOMAIN),
 					description: __(
-						'Edit the site summary, About description, and link bullets in /llms.txt.',
+						'Edit the site summary and About description in /llms.txt.',
 						TEXT_DOMAIN
 					),
-					render: () => <AboutSection />,
+					fields: ABOUT_FIELDS,
+				},
+				{
+					slug: 'about-links',
+					title: __('About Links', TEXT_DOMAIN),
+					description: __(
+						'Link bullets under ## About in /llms.txt.',
+						TEXT_DOMAIN
+					),
+					render: () => <AboutLinksSection />,
 				},
 				{
 					slug: 'categories',
