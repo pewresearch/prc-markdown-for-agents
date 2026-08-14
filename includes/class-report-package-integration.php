@@ -44,13 +44,24 @@ class Report_Package_Integration {
 	 */
 	public function append_next_page_link( $markdown_body, $post ) {
 		// Prepend TOC for report root with materials (right after post title on /markdown).
+		// Ignore the synthetic Print Engine materials entry — it is always present for
+		// supported post types and must not count as "has materials".
 		if ( function_exists( 'PRC\Platform\Report_Package\is_report_package' )
 			&& function_exists( 'PRC\Platform\Report_Package\get_package_materials' )
-			&& \PRC\Platform\Report_Package\is_report_package( $post->ID )
-			&& ! empty( \PRC\Platform\Report_Package\get_package_materials( $post->ID ) ) ) {
-			$toc = apply_filters( 'prc_markdown_for_agents_toc_for_post', '', $post );
-			if ( '' !== $toc ) {
-				$markdown_body = $toc . "\n\n" . $markdown_body;
+			&& \PRC\Platform\Report_Package\is_report_package( $post->ID ) ) {
+			$materials      = (array) \PRC\Platform\Report_Package\get_package_materials( $post->ID );
+			$real_materials = array_filter(
+				$materials,
+				static function ( $material ) {
+					return is_array( $material )
+						&& ( $material['type'] ?? '' ) !== 'printEngineBeta';
+				}
+			);
+			if ( ! empty( $real_materials ) ) {
+				$toc = apply_filters( 'prc_markdown_for_agents_toc_for_post', '', $post );
+				if ( '' !== $toc ) {
+					$markdown_body = $toc . "\n\n" . $markdown_body;
+				}
 			}
 		}
 

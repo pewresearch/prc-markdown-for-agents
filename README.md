@@ -1,5 +1,7 @@
 # PRC Markdown for Agents
 
+> Canonical docs: [docs/plugins/prc-markdown-for-agents/](../../docs/plugins/prc-markdown-for-agents/)
+
 Serves WordPress post content as Markdown for AI agents and crawlers via `.md` and `/markdown` URL endpoints (and `rel="alternate"` discovery in HTML).
 
 ## Overview

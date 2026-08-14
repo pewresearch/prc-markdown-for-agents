@@ -9,6 +9,8 @@ declare( strict_types=1 );
 
 namespace PRC\Platform\Markdown_For_Agents;
 
+use PRC\Platform\Settings_Page_Boot;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -348,7 +350,7 @@ class Settings {
 	}
 
 	public function render_admin_page(): void {
-		echo '<div class="wrap"><div id="prc-markdown-for-agents-settings-admin"></div></div>';
+		Settings_Page_Boot::render( 'prc-markdown-for-agents-settings-admin' );
 	}
 
 	/** @hook admin_enqueue_scripts */
@@ -394,6 +396,12 @@ class Settings {
 			array(
 				'llmsTxtUrl' => home_url( '/llms.txt' ),
 			)
+		);
+
+		Settings_Page_Boot::enqueue(
+			$handle,
+			(string) $asset['version'],
+			'prc-markdown-for-agents-settings-admin'
 		);
 	}
 
