@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Integration with prc-datasets plugin.
  *
@@ -43,7 +42,7 @@ class Datasets_Integration {
 	 * @return array The modified frontmatter data.
 	 */
 	public function add_datasets_to_frontmatter( $data, $post ) {
-		if ( ! taxonomy_exists( 'datasets' ) || ! function_exists( '\TDS\get_related_post' ) ) {
+		if ( ! taxonomy_exists( 'datasets' ) || ! function_exists( '\PRC\Primitives\TDS\get_related_post' ) ) {
 			return $data;
 		}
 
