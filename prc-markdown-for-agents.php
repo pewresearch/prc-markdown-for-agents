@@ -32,6 +32,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Content for Agents and PRC Bridge replace this plugin when the VIP integration is on. See client-mu-plugins/content-for-agents.php.
+if ( defined( 'CONTENT_FOR_AGENTS_LOADED' ) || defined( 'CONTENT_FOR_AGENTS_FILE' ) ) {
+	return;
+}
+
 define( 'PRC_MARKDOWN_FOR_AGENTS_FILE', __FILE__ );
 define( 'PRC_MARKDOWN_FOR_AGENTS_DIR', __DIR__ );
 define( 'PRC_MARKDOWN_FOR_AGENTS_VERSION', '1.0.0' );

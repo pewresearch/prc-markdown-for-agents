@@ -17,6 +17,8 @@ The plugin integrates with four other platform plugins (staff bylines, datasets,
 - **Upstream**: `prc-scripts` (required), `prc-staff-bylines` (optional — richer author data), `prc-datasets` (optional — dataset frontmatter), `prc-pdf-extraction` (optional — extraction URL in frontmatter), `prc-report-package` (optional — next-chapter navigation links)
 - **Downstream**: Any plugin or external agent that reads `.md` or `/markdown` URLs
 
+> **Content for Agents replaces this plugin where VIP enables it.** `client-mu-plugins/content-for-agents.php` loads VIP's base plugin and `plugins/prc-bridge/` at `muplugins_loaded` priority 6. This plugin then returns early (`CONTENT_FOR_AGENTS_LOADED`), `.md` URLs redirect 301 to `/markdown`, and `/llms.txt` comes from the bridge. Opt in on a local dev-env with `wp site option update prc_content_for_agents 1`. Details: [architecture](../../docs/plugins/prc-markdown-for-agents/architecture.md#content-for-agents-and-prc-bridge-vip-integration).
+
 ## Architecture
 
 Bootstrap loads all classes and wires these entry points:
