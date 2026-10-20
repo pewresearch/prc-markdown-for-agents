@@ -1,5 +1,5 @@
 
-> @prc/markdown-for-agents@1.0.6 build
+> @prc/markdown-for-agents@1.0.5 build
 > wp-scripts build --config webpack.config.js
 
 Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
@@ -17,4 +17,4 @@ runtime modules 2.52 KiB 3 modules
 built modules 26.8 KiB (javascript) 1.09 KiB (css/mini-extract) [1m[33m[built][39m[22m
   [1m./src/settings/index.tsx + 18 modules[39m[22m 26.8 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
   css ../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m./src/settings/style.scss[39m[22m 1.09 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 1931 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 7889 ms
